@@ -1,0 +1,14 @@
+{
+  "input": {
+    "prompt": "Two city council members pose on a sunlit terrace with relaxed smiles and a warm approachable mood.",
+    "ref_images": [
+      "https://example.com/ref/person-a.png",
+      "https://example.com/ref/person-b.png"
+    ],
+    "layout_bboxes": [
+      [0.20507812, 0.43945312, 0.48828125, 0.7421875],
+      [0.57617188, 0.80078125, 0.08789062, 0.34179688]
+    ],
+    "output_format": "png"
+  }
+}

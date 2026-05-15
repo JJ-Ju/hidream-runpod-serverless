@@ -1,0 +1,9 @@
+{
+  "input": {
+    "prompt": "A cinematic aviation poster showing a bright red biplane flying over rolling green fields, with crisp readable text: ADVENTURE IN THE FRIENDLY SKIES",
+    "width": 2048,
+    "height": 2048,
+    "seed": 32,
+    "output_format": "png"
+  }
+}

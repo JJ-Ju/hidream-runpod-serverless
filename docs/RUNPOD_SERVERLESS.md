@@ -80,6 +80,10 @@ deterministic public object URLs; without it, the worker creates presigned URLs.
 }
 ```
 
+Reference images must be public image URLs or small base64/data URI payloads.
+The worker rejects local file paths, private-network URLs, non-image content, and
+reference payloads larger than 20 MB.
+
 ## Example Multi-Reference Job
 
 ```json

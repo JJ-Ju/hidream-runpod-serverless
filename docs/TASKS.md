@@ -9,37 +9,37 @@
 
 ## Workstream B: Worker Runtime
 
-- [ ] Add request schema and validation for all O1 modes.
-- [ ] Add mode detection for text-to-image, edit, reference personalization, and
+- [x] Add request schema and validation for all O1 modes.
+- [x] Add mode detection for text-to-image, edit, reference personalization, and
   layout-conditioned reference generation.
-- [ ] Add cached Hugging Face snapshot path resolution.
-- [ ] Add singleton model loading around the upstream HiDream processor/model.
-- [ ] Add image input preparation for URLs and base64 references.
-- [ ] Add S3-compatible output upload and URL response metadata.
-- [ ] Add local-only base64 fallback behind an explicit environment flag.
-- [ ] Add thin RunPod `handler.py` entrypoint.
+- [x] Add cached Hugging Face snapshot path resolution.
+- [x] Add singleton model loading around the upstream HiDream processor/model.
+- [x] Add image input preparation for URLs and base64 references.
+- [x] Add S3-compatible output upload and URL response metadata.
+- [x] Add local-only base64 fallback behind an explicit environment flag.
+- [x] Add thin RunPod `handler.py` entrypoint.
 
 ## Workstream C: Upstream HiDream Integration
 
-- [ ] Vendor pinned upstream HiDream inference/model files from commit
+- [x] Vendor pinned upstream HiDream inference/model files from commit
   `210c9bff329467cf32dd3e15f970c029f6f7213f`.
-- [ ] Preserve upstream MIT license and attribution.
-- [ ] Add attention backend configuration for `sdpa` and `flash`.
-- [ ] Keep PyTorch dependency away from unsupported `2.9.x`.
+- [x] Preserve upstream MIT license and attribution.
+- [x] Add attention backend configuration for `sdpa` and `flash`.
+- [x] Keep PyTorch dependency away from unsupported `2.9.x`.
 
 ## Workstream D: Container And CI
 
-- [ ] Add CUDA/PyTorch Dockerfile with `ATTENTION_BACKEND=sdpa|flash`.
-- [ ] Add requirements for runtime and test dependencies.
-- [ ] Add `.dockerignore`.
-- [ ] Add example RunPod payloads.
-- [ ] Add GitHub Actions workflow to test and build/publish both GHCR variants.
+- [x] Add CUDA/PyTorch Dockerfile with `ATTENTION_BACKEND=sdpa|flash`.
+- [x] Add requirements for runtime and test dependencies.
+- [x] Add `.dockerignore`.
+- [x] Add example RunPod payloads.
+- [x] Add GitHub Actions workflow to test and build/publish both GHCR variants.
 
 ## Workstream E: Verification
 
-- [ ] Unit-test validation, mode detection, cache path resolution, storage key
+- [x] Unit-test validation, mode detection, cache path resolution, storage key
   generation, S3 URL behavior, and handler delegation.
-- [ ] Run import/compile checks without CUDA/model weights.
-- [ ] Run local unit tests.
-- [ ] Review final diff for spec coverage and accidental tracked artifacts.
+- [x] Run import/compile checks without CUDA/model weights.
+- [x] Run local unit tests.
+- [x] Review final diff for spec coverage and accidental tracked artifacts.
 - [ ] Commit and push via `github.com-agent`.

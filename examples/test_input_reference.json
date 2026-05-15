@@ -1,0 +1,11 @@
+{
+  "input": {
+    "prompt": "Place the referenced character in a neon-lit night market while preserving their face and outfit.",
+    "ref_images": [
+      "https://example.com/ref/front.png",
+      "https://example.com/ref/side.png"
+    ],
+    "seed": 42,
+    "output_format": "png"
+  }
+}

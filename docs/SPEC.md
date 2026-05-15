@@ -17,10 +17,10 @@ Required:
 
 Optional:
 
-- `width`, `height`: positive integers, default `2048`.
+- `width`, `height`: positive integers up to `2048`, default `2048`.
 - `seed`: integer, default `32`.
 - `model_type`: `full` or `dev`, default `full`.
-- `ref_images`: array of URLs, local paths, or base64/data URI images.
+- `ref_images`: up to 10 public image URLs or small base64/data URI images.
 - `layout_bboxes`: array/object accepted by upstream HiDream layout handling.
 - `keep_original_aspect`: boolean, default `false`.
 - `editing_scheduler`: `flow_match` or `flash`, default `flow_match`.
@@ -43,6 +43,8 @@ Response returns:
 ## Acceptance Criteria
 
 - The worker validates bad inputs with clear `error` responses before GPU work.
+- Reference images reject local paths, private-network URLs, non-image content, and
+  payloads larger than 20 MB.
 - The worker resolves a local cached Hugging Face snapshot from RunPod cache
   conventions unless `HIDREAM_MODEL_PATH` is set.
 - The worker supports all upstream O1 modes through a single RunPod endpoint.
