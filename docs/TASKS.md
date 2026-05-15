@@ -42,4 +42,4 @@
 - [x] Run import/compile checks without CUDA/model weights.
 - [x] Run local unit tests.
 - [x] Review final diff for spec coverage and accidental tracked artifacts.
-- [ ] Commit and push via `github.com-agent`.
+- [x] Commit and push via `github.com-agent`.
