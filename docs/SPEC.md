@@ -52,9 +52,10 @@ Response returns:
 - Missing object-storage configuration returns a clear error unless
   `ALLOW_BASE64_OUTPUT=1`.
 - Docker builds provide stable `sdpa` and experimental `flash` variants. The
-  flash image bootstraps `flash-attn` at RunPod startup instead of compiling it
-  during GitHub Actions, and caches matching wheels on the attached network
-  volume under `/runpod-volume/flash-attn-cache`.
+  flash image uses `ATTENTION_BACKEND=auto`, detects live RunPod hardware at
+  startup, uses flash-attn when available or cacheable, falls back to SDPA when
+  not, and caches matching wheels on the attached network volume under
+  `/runpod-volume/flash-attn-cache`.
 - Tests cover validation, mode detection, cache resolution, storage URL behavior,
   output key generation, and handler delegation without requiring CUDA/model
   weights.

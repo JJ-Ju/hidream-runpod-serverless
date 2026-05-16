@@ -9,6 +9,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 
 DEFAULT_FLASH_ATTN_CACHE_DIR = "/runpod-volume/flash-attn-cache"
@@ -44,6 +45,13 @@ class FlashRuntime:
         if self.gpu_arch.startswith("sm") and len(self.gpu_arch) >= 4:
             return f"{self.gpu_arch[2]}.{self.gpu_arch[3:]}"
         return ""
+
+
+@dataclass(frozen=True)
+class AttentionChoice:
+    backend: str
+    reason: str
+    runtime: FlashRuntime | None = None
 
 
 def safe_package_name(package: str) -> str:
@@ -134,7 +142,76 @@ def build_and_cache_wheel(runtime: FlashRuntime) -> Path:
         return destination
 
 
-def bootstrap() -> None:
+def choose_attention_backend(
+    requested: str = "auto",
+    detect_runtime_fn: Callable[[], FlashRuntime] = detect_runtime,
+    flash_available_fn: Callable[[], bool] = flash_available,
+    cached_wheel_fn: Callable[[FlashRuntime], Path | None] = cached_wheel,
+    install_wheel_fn: Callable[[Path], None] = install_wheel,
+    build_and_cache_wheel_fn: Callable[[FlashRuntime], Path] = build_and_cache_wheel,
+    fallback_backend: str = "sdpa",
+) -> AttentionChoice:
+    requested = requested.lower()
+    if requested == "sdpa":
+        return AttentionChoice("sdpa", "ATTENTION_BACKEND explicitly set to sdpa")
+    if requested not in {"auto", "flash"}:
+        raise ValueError("ATTENTION_BACKEND must be one of: auto, flash, sdpa")
+    if flash_available_fn():
+        return AttentionChoice("flash", "flash-attn is already importable")
+
+    try:
+        runtime = detect_runtime_fn()
+    except Exception as exc:
+        if requested == "flash":
+            raise
+        return AttentionChoice(fallback_backend, f"flash-attn runtime detection failed: {exc}")
+
+    wheel = cached_wheel_fn(runtime)
+    if wheel is None:
+        try:
+            wheel = build_and_cache_wheel_fn(runtime)
+        except Exception as exc:
+            if requested == "flash":
+                raise
+            return AttentionChoice(
+                fallback_backend,
+                f"flash-attn build/cache failed for {runtime.cache_key}: {exc}",
+                runtime,
+            )
+        reason = f"built and cached flash-attn wheel for {runtime.cache_key}"
+    else:
+        reason = f"installed cached flash-attn wheel for {runtime.cache_key}"
+
+    try:
+        install_wheel_fn(wheel)
+    except Exception as exc:
+        if requested == "flash":
+            raise
+        return AttentionChoice(
+            fallback_backend,
+            f"flash-attn wheel install failed for {runtime.cache_key}: {exc}",
+            runtime,
+        )
+    return AttentionChoice("flash", reason, runtime)
+
+
+def write_env_file(path: str | Path, backend: str) -> None:
+    Path(path).write_text(f"export ATTENTION_BACKEND={backend}\n", encoding="utf-8")
+
+
+def bootstrap(requested: str | None = None, write_env: str | Path | None = None) -> AttentionChoice:
+    requested = requested or os.environ.get("ATTENTION_BACKEND", "auto")
+    choice = choose_attention_backend(
+        requested=requested,
+        fallback_backend=os.environ.get("FLASH_ATTN_FALLBACK_BACKEND", "sdpa"),
+    )
+    print(f"Selected ATTENTION_BACKEND={choice.backend}: {choice.reason}", flush=True)
+    if write_env:
+        write_env_file(write_env, choice.backend)
+    return choice
+
+
+def bootstrap_flash_only() -> None:
     if flash_available():
         print("flash-attn is already available", flush=True)
         return
@@ -155,4 +232,10 @@ def bootstrap() -> None:
 
 
 if __name__ == "__main__":
-    bootstrap()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--requested", default=os.environ.get("ATTENTION_BACKEND", "auto"))
+    parser.add_argument("--write-env")
+    args = parser.parse_args()
+    bootstrap(requested=args.requested, write_env=args.write_env)
