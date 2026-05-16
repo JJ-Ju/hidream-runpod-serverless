@@ -1,7 +1,10 @@
 {
   "input": {
     "prompt": "Convert this source render into a clean front-facing asset image with crisp silhouette edges and neutral studio lighting.",
-    "input_image": "https://example.com/source/render.png",
+    "input_image": {
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+      "mime_type": "image/png"
+    },
     "keep_original_aspect": true,
     "output_format": "png",
     "output_delivery": "base64"

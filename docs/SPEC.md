@@ -22,10 +22,11 @@ Optional:
 - `width`, `height`: positive integers up to `2048`, default `2048`.
 - `seed`: integer, default `32`.
 - `model_type`: `full` or `dev`, default `full`.
-- `ref_images`: up to 10 public image URLs or small base64/data URI images.
+- `input_images` or `ref_images`: up to 10 direct image payload objects,
+  base64 strings, data URI images, public URLs, or presigned URLs.
 - `input_image`, `init_image`, `image`, or `ref_image`: single-image aliases
-  for edit jobs. Use these instead of `ref_images` when submitting exactly one
-  source image.
+  for edit jobs. Use these with direct payload objects when submitting exactly
+  one source image.
 - `layout_bboxes`: array/object accepted by upstream HiDream layout handling.
 - `keep_original_aspect`: boolean, default `false`.
 - `editing_scheduler`: `flow_match` or `flash`, default `flow_match`.
@@ -54,6 +55,9 @@ Response returns:
 - The worker validates bad inputs with clear `error` responses before GPU work.
 - Reference images reject local paths, private-network URLs, non-image content, and
   payloads larger than 20 MB.
+- Direct input image payloads do not require S3, presigned URLs, or any other
+  externally hosted object. The explicit direct object form is
+  `{"base64": "...", "mime_type": "image/png"}`.
 - The worker resolves a local cached Hugging Face snapshot from RunPod cache
   conventions unless `HIDREAM_MODEL_PATH` is set.
 - The worker supports all upstream O1 modes through a single RunPod endpoint.

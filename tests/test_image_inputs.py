@@ -1,4 +1,5 @@
 import base64
+from pathlib import Path
 
 import pytest
 import requests
@@ -26,6 +27,18 @@ def test_reference_images_decode_small_base64_payloads(tmp_path):
 
     assert path.endswith(".png")
     assert (tmp_path / "references").exists()
+
+
+def test_reference_images_decode_direct_payload_objects(tmp_path):
+    encoded = base64.b64encode(b"fake-image").decode("ascii")
+
+    [path] = prepare_reference_images(
+        [{"base64": encoded, "mime_type": "image/webp"}],
+        tmp_path,
+    )
+
+    assert path.endswith(".webp")
+    assert Path(path).read_bytes() == b"fake-image"
 
 
 def test_reference_images_reject_oversized_downloads(monkeypatch, tmp_path):

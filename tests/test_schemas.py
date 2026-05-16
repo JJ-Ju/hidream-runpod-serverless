@@ -52,6 +52,46 @@ def test_request_accepts_single_image_edit_aliases():
         assert request.mode == GenerationMode.EDIT
 
 
+def test_request_accepts_direct_image_payload_objects():
+    edit = GenerationRequest.from_input(
+        {
+            "prompt": "clean up this source render",
+            "input_image": {
+                "base64": "ZmFrZS1pbWFnZQ==",
+                "mime_type": "image/png",
+            },
+        }
+    )
+    reference = GenerationRequest.from_input(
+        {
+            "prompt": "combine these sources",
+            "ref_images": [
+                {"image_base64": "ZmFrZS1pbWFnZS0x", "content_type": "image/webp"},
+                {"data_uri": "data:image/png;base64,ZmFrZS1pbWFnZS0y"},
+            ],
+        }
+    )
+
+    assert edit.ref_images == [{"base64": "ZmFrZS1pbWFnZQ==", "mime_type": "image/png"}]
+    assert edit.mode == GenerationMode.EDIT
+    assert reference.mode == GenerationMode.REFERENCE
+
+
+def test_request_accepts_input_images_alias_for_multi_reference_payloads():
+    request = GenerationRequest.from_input(
+        {
+            "prompt": "combine these sources",
+            "input_images": [
+                {"base64": "ZmFrZS0x", "mime_type": "image/png"},
+                {"base64": "ZmFrZS0y", "mime_type": "image/png"},
+            ],
+        }
+    )
+
+    assert len(request.ref_images) == 2
+    assert request.mode == GenerationMode.REFERENCE
+
+
 def test_request_rejects_invalid_prompt_and_format():
     with pytest.raises(RequestValidationError, match="prompt"):
         GenerationRequest.from_input({"prompt": "   "})
@@ -93,6 +133,29 @@ def test_request_rejects_bad_reference_images():
 
     with pytest.raises(RequestValidationError, match="input_image"):
         GenerationRequest.from_input({"prompt": "x", "input_image": ""})
+
+    with pytest.raises(RequestValidationError, match="exactly one"):
+        GenerationRequest.from_input(
+            {
+                "prompt": "x",
+                "input_image": {
+                    "url": "https://example.com/a.png",
+                    "base64": "ZmFrZQ==",
+                },
+            }
+        )
+
+    with pytest.raises(RequestValidationError, match="url, image_url, data_uri, base64, image_base64"):
+        GenerationRequest.from_input({"prompt": "x", "input_image": {"mime_type": "image/png"}})
+
+    with pytest.raises(RequestValidationError, match="ref_images or input_images"):
+        GenerationRequest.from_input(
+            {
+                "prompt": "x",
+                "ref_images": ["https://example.com/a.png"],
+                "input_images": [{"base64": "ZmFrZQ=="}],
+            }
+        )
 
 
 def test_request_rejects_resource_exhaustion_values():
