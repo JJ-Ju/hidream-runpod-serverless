@@ -25,7 +25,9 @@ The flash image bootstraps `flash-attn` at container startup with
 `BOOTSTRAP_FLASH_ATTN=1`. It detects the live GPU, CUDA, PyTorch, Python ABI,
 and platform, then caches the built wheel under `/runpod-volume/flash-attn-cache`
 when a RunPod network volume is attached. The first cold start per unique runtime
-can still take several minutes; later starts can reuse the cached wheel.
+can still take several minutes if a compatible prebuilt wheel is available.
+If pip must compile from source, seed the cache from a CUDA devel Pod attached to
+the same network volume.
 
 ## Required RunPod Environment
 

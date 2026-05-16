@@ -52,7 +52,7 @@ jobs:
             channel_tag: flash
             attention_backend: flash
             bootstrap_flash_attn: 1
-            base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-devel
+            base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
     steps:
       - name: Checkout
         uses: actions/checkout@v4

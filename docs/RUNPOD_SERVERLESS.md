@@ -28,7 +28,9 @@ volume at `/runpod-volume`, and the worker caches built flash-attn wheels under
 `/runpod-volume/flash-attn-cache`. The cache key includes the detected GPU
 compute capability, CUDA version, PyTorch version, Python ABI, platform, and
 `FLASH_ATTN_PACKAGE`. The first cold start per unique runtime may take several
-minutes; later starts can install the cached wheel.
+minutes if a compatible prebuilt wheel exists. If pip must compile from source,
+seed this cache from a CUDA devel Pod attached to the same network volume, then
+serverless workers can install the cached wheel without carrying a devel image.
 
 ## RunPod Endpoint Settings
 
