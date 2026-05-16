@@ -52,6 +52,98 @@ install the cached wheel without carrying a devel image.
 
 ## Environment Variables
 
+Use one of these complete profiles in the RunPod environment variable editor.
+Direct image input is a request payload feature, not an environment variable:
+send `input_image` or `input_images` with base64/data URI objects in each job.
+
+### Direct Input And Direct Output
+
+Use this profile when the upstream 3D workflow sends images directly in the
+RunPod job payload and the next stage consumes generated image bytes directly
+from the RunPod response. This profile does not need S3-compatible storage.
+
+```text
+HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
+HIDREAM_HF_CACHE_ROOT=/runpod-volume/huggingface-cache/hub
+DEFAULT_OUTPUT_DELIVERY=base64
+ATTENTION_BACKEND=auto
+HIDREAM_BOOTSTRAP_DEPS=1
+BOOTSTRAP_FLASH_ATTN=1
+FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
+FLASH_ATTN_FALLBACK_BACKEND=sdpa
+WORK_DIR=/tmp/hidream-o1
+```
+
+Payload:
+
+```json
+{
+  "input": {
+    "prompt": "Clean this source image for a downstream 3D reconstruction stage.",
+    "input_image": {
+      "base64": "<base64-encoded-source-image>",
+      "mime_type": "image/png"
+    },
+    "output_format": "png",
+    "output_delivery": "base64"
+  }
+}
+```
+
+Expected response fields include `image_base64`, `content_type`,
+`image_size_bytes`, `seed`, `width`, `height`, `mode`, `model_id`, and
+`attention_backend`.
+
+### Direct Input And S3 Output
+
+Use this profile when source images still arrive directly in the job payload,
+but generated outputs should be uploaded to S3-compatible storage and returned
+as URL metadata.
+
+```text
+HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
+HIDREAM_HF_CACHE_ROOT=/runpod-volume/huggingface-cache/hub
+DEFAULT_OUTPUT_DELIVERY=url
+ATTENTION_BACKEND=auto
+HIDREAM_BOOTSTRAP_DEPS=1
+BOOTSTRAP_FLASH_ATTN=1
+FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
+FLASH_ATTN_FALLBACK_BACKEND=sdpa
+WORK_DIR=/tmp/hidream-o1
+OUTPUT_PREFIX=hidream-o1
+S3_ENDPOINT_URL=https://<s3-compatible-endpoint>
+S3_REGION=auto
+S3_BUCKET=<bucket-name>
+S3_ACCESS_KEY_ID=<access-key>
+S3_SECRET_ACCESS_KEY=<secret-key>
+S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
+```
+
+`S3_PUBLIC_BASE_URL` is optional. When it is set, the worker returns a
+deterministic public URL. When it is omitted, the worker returns a presigned URL.
+
+Payload:
+
+```json
+{
+  "input": {
+    "prompt": "Clean this source image for a downstream 3D reconstruction stage.",
+    "input_image": {
+      "base64": "<base64-encoded-source-image>",
+      "mime_type": "image/png"
+    },
+    "output_format": "png",
+    "output_delivery": "url"
+  }
+}
+```
+
+Expected response fields include `image_url`, `bucket`, `key`, `content_type`,
+`image_size_bytes`, `seed`, `width`, `height`, `mode`, `model_id`, and
+`attention_backend`.
+
+### Full Variable Reference
+
 Required:
 
 ```text

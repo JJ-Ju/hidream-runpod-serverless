@@ -21,6 +21,8 @@
 - [x] Add explicit direct input image payload objects that do not require
   hosted image URLs.
 - [x] Add `input_images` as the pipeline-facing alias for multi-image inputs.
+- [x] Document complete RunPod env profiles for direct input/direct output and
+  direct input/S3 output.
 - [x] Add thin RunPod `handler.py` entrypoint.
 
 ## Workstream C: Upstream HiDream Integration

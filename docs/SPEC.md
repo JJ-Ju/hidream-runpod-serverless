@@ -58,6 +58,8 @@ Response returns:
 - Direct input image payloads do not require S3, presigned URLs, or any other
   externally hosted object. The explicit direct object form is
   `{"base64": "...", "mime_type": "image/png"}`.
+- Docs include complete RunPod environment profiles for direct input/direct
+  output and direct input/S3 output deployments.
 - The worker resolves a local cached Hugging Face snapshot from RunPod cache
   conventions unless `HIDREAM_MODEL_PATH` is set.
 - The worker supports all upstream O1 modes through a single RunPod endpoint.
