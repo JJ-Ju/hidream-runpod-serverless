@@ -8,25 +8,75 @@ object storage, and returns image URLs.
 
 ## Images
 
-Stable no-flash attention image:
+Dynamic attention image:
 
 ```text
-ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>-sdpa
+ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>
 ```
 
-Experimental flash-attn image:
-
-```text
-ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>-flash
-```
-
-Use immutable `sha-*` or `vX.Y.Z-*` tags for RunPod production endpoints.
-The flash image uses `ATTENTION_BACKEND=auto`. At container startup it detects
+Use immutable `sha-*` or `vX.Y.Z` tags for RunPod production endpoints.
+The image uses `ATTENTION_BACKEND=auto`. At container startup it detects
 the live GPU, CUDA, PyTorch, Python ABI, and platform. If flash-attn is already
 installed, available from `/runpod-volume/flash-attn-cache`, or can be built for
 that exact runtime, the worker starts with flash attention. Otherwise it falls
-back to SDPA and still serves requests. If pip must compile from source, seed the
-cache from a CUDA devel Pod attached to the same network volume.
+back to SDPA and still serves requests. To force SDPA for debugging, set
+`ATTENTION_BACKEND=sdpa` on the RunPod endpoint. If pip must compile flash-attn
+from source, seed the cache from a CUDA devel Pod attached to the same network
+volume.
+
+The container uses the official PyTorch
+`pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime` image, pinned by digest, so
+Python 3.12, CUDA 12.8, cuDNN 9, and PyTorch 2.10.0 come from a known upstream
+base. App dependencies are installed into a hash-keyed virtual environment under
+`/runpod-volume/hidream-runtime/envs` when a writable network volume is present.
+The venv inherits the base PyTorch stack instead of reinstalling it. A fresh
+volume pays the app dependency install cost once; later workers reuse the cached
+environment. Without a writable volume, the worker falls back to an ephemeral
+cache under `/tmp/hidream-runtime`.
+
+## RunPod Quickstart
+
+1. Use the dynamic image:
+
+   ```text
+   ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>
+   ```
+
+2. Create a RunPod Serverless endpoint with a custom container image. Use a
+   queue endpoint. Do not configure an exposed port.
+
+3. Attach a RunPod network volume if you want dependency, model, pip, Torch
+   extension, and flash-attn caches to survive cold starts. Serverless mounts the
+   volume at `/runpod-volume`.
+
+4. Configure Hugging Face model caching for:
+
+   ```text
+   HiDream-ai/HiDream-O1-Image
+   ```
+
+5. Set the required environment variables from the section below, especially the
+   S3-compatible output storage variables. The worker returns URLs, not large
+   inline image payloads, unless `ALLOW_BASE64_OUTPUT=1` is set.
+
+6. Submit jobs to the RunPod endpoint with JSON shaped like:
+
+   ```json
+   {
+     "input": {
+       "prompt": "A cinematic portrait of an astronaut botanist in a glass greenhouse on Mars",
+       "width": 2048,
+       "height": 2048,
+       "seed": 32,
+       "output_format": "png"
+     }
+   }
+   ```
+
+7. Leave `ATTENTION_BACKEND=auto` for normal use. The worker will use flash-attn
+   when it is available for the live hardware and fall back to SDPA otherwise.
+   Set `ATTENTION_BACKEND=sdpa` only when you want to disable flash-attn
+   explicitly.
 
 ## Required RunPod Environment
 
@@ -47,14 +97,23 @@ S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
 ALLOW_BASE64_OUTPUT=1
 OUTPUT_PREFIX=hidream-o1
 BOOTSTRAP_FLASH_ATTN=1
+HIDREAM_BOOTSTRAP_DEPS=1
 FLASH_ATTN_PACKAGE=flash-attn
 FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
 FLASH_ATTN_FALLBACK_BACKEND=sdpa
 MAX_JOBS=4
+ATTENTION_BACKEND=auto
 ```
 
 Reference images must be public image URLs or small base64/data URI payloads.
 Local file paths and private-network URLs are rejected.
+
+## Ports
+
+No container ports need to be exposed for RunPod Serverless. This image starts
+`handler.py`, which calls `runpod.serverless.start(...)` and receives jobs
+through RunPod's serverless queue/control plane. Do not configure an HTTP server,
+container port, or `EXPOSE` directive unless you add a separate debugging server.
 
 ## Local Tests
 

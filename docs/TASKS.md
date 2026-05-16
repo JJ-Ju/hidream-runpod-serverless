@@ -29,11 +29,12 @@
 
 ## Workstream D: Container And CI
 
-- [x] Add CUDA/PyTorch Dockerfile with `ATTENTION_BACKEND=sdpa|flash`.
+- [x] Add CUDA/PyTorch Dockerfile with dynamic `ATTENTION_BACKEND=auto`.
 - [x] Add requirements for runtime and test dependencies.
 - [x] Add `.dockerignore`.
 - [x] Add example RunPod payloads.
-- [x] Add GitHub Actions workflow to test and build/publish both GHCR variants.
+- [x] Add GitHub Actions workflow to test and build/publish the dynamic GHCR
+  image.
 
 ## Workstream E: Verification
 
@@ -43,3 +44,23 @@
 - [x] Run local unit tests.
 - [x] Review final diff for spec coverage and accidental tracked artifacts.
 - [x] Commit and push via `github.com-agent`.
+
+## Workstream F: Volume-Cached Runtime Dependencies
+
+- [x] Lock the container bootstrap runtime to Python 3.12, CUDA 12.8, and
+  PyTorch 2.10.0.
+- [x] Use the official PyTorch CUDA runtime image for the base Python, CUDA,
+  cuDNN, and PyTorch stack.
+- [x] Keep Torch out of the volume dependency install so the cached venv inherits
+  the base image's PyTorch stack.
+- [x] Add a dependency bootstrapper that creates or reuses a versioned virtual
+  environment under `/runpod-volume`.
+- [x] Include Python, CUDA, Torch, TorchVision, platform, and dependency hashes
+  in the dependency environment cache key.
+- [x] Add startup locking so concurrent workers do not build the same virtual
+  environment at the same time.
+- [x] Export Hugging Face, pip, Torch, and flash-attn caches onto the network
+  volume when present.
+- [x] Document first-start behavior, cache invalidation, and the ephemeral
+  fallback path.
+- [x] Verify unit tests and import/compile checks.

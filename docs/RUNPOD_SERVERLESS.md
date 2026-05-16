@@ -2,38 +2,44 @@
 
 ## Image
 
-Use the stable no-flash image first:
+Use the dynamic attention image:
 
 ```text
-ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>-sdpa
+ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>
 ```
 
-The experimental flash-attn image is published separately:
+Prefer immutable `sha-*` or `vX.Y.Z` tags for production endpoints. Use `latest`
+only for quick testing on the default branch.
 
-```text
-ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>-flash
-```
-
-Prefer immutable `sha-*` or `vX.Y.Z-*` tags for production endpoints. Use
-`latest` only for the default SDPA channel and `flash` only for experimental
-flash-attn testing.
-
-The flash image does not compile `flash-attn` during GitHub Actions because the
-Docker build runner has no RunPod GPU attached. Instead it starts with
+The image does not compile `flash-attn` during GitHub Actions because the Docker
+build runner has no RunPod GPU attached. Instead it starts with
 `ATTENTION_BACKEND=auto`, detects the live RunPod GPU/runtime at container
 startup, and writes the selected backend into the environment before launching
-the worker.
+the worker. If flash-attn is unavailable or cannot be built for the detected
+hardware, the worker falls back to SDPA and still serves requests. Set
+`ATTENTION_BACKEND=sdpa` only when you want to force the fallback path.
 
-For flash testing, attach a RunPod network volume. Serverless workers mount that
+The image uses the official PyTorch
+`pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime` base, pinned by digest. That
+base provides Python 3.12, CUDA 12.8, cuDNN 9, and PyTorch 2.10.0. The production
+app dependency environment is installed at startup into a versioned virtual
+environment under `/runpod-volume/hidream-runtime/envs` when a network volume is
+attached and writable. The venv is created with `--system-site-packages` so it
+inherits the base PyTorch/CUDA stack instead of reinstalling it. The cache key
+includes Python, CUDA, Torch, TorchVision, platform, and dependency file hashes.
+A fresh volume pays the one-time app dependency install cost; later workers
+attached to the same volume activate the cached environment. If `/runpod-volume`
+is unavailable, the same logic falls back to `/tmp/hidream-runtime`, which is
+ephemeral.
+
+Attach a RunPod network volume for persistent runtime caches. Serverless workers mount that
 volume at `/runpod-volume`, and the worker caches built flash-attn wheels under
 `/runpod-volume/flash-attn-cache`. The cache key includes the detected GPU
 compute capability, CUDA version, PyTorch version, Python ABI, platform, and
-`FLASH_ATTN_PACKAGE`. If flash-attn is unavailable or cannot be built for the
-detected hardware, the worker falls back to SDPA and still serves requests. The
-first flash-enabled cold start per unique runtime may take several minutes. If
-pip must compile from source, seed this cache from a CUDA devel Pod attached to
-the same network volume, then serverless workers can install the cached wheel
-without carrying a devel image.
+`FLASH_ATTN_PACKAGE`. The first flash-enabled cold start per unique runtime may
+take several minutes. If pip must compile from source, seed this cache from a
+CUDA devel Pod attached to the same network volume, then serverless workers can
+install the cached wheel without carrying a devel image.
 
 ## RunPod Endpoint Settings
 
@@ -65,15 +71,21 @@ HIDREAM_MODEL_PATH=/explicit/local/model/path
 S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
 ALLOW_BASE64_OUTPUT=1
 OUTPUT_PREFIX=hidream-o1
+HIDREAM_BOOTSTRAP_DEPS=1
+HIDREAM_DEPENDENCY_FALLBACK_ROOT=/tmp/hidream-runtime
 BOOTSTRAP_FLASH_ATTN=1
 FLASH_ATTN_PACKAGE=flash-attn
 FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
 FLASH_ATTN_FALLBACK_BACKEND=sdpa
 MAX_JOBS=4
+ATTENTION_BACKEND=auto
 ```
 
-`HIDREAM_MODEL_PATH` bypasses cache resolution. `S3_PUBLIC_BASE_URL` returns
-deterministic public object URLs; without it, the worker creates presigned URLs.
+`HIDREAM_MODEL_PATH` bypasses cache resolution. Leave
+`HIDREAM_RUNTIME_CACHE_ROOT` unset unless you intentionally want to override the
+auto-selected persistent/ephemeral dependency cache path. `S3_PUBLIC_BASE_URL`
+returns deterministic public object URLs; without it, the worker creates
+presigned URLs.
 
 ## Example Text-To-Image Job
 
@@ -143,7 +155,7 @@ The layout box order follows upstream HiDream: `[x1, x2, y1, y2]`.
 
 ## Manual GPU Smoke Test
 
-1. Deploy the SDPA image with cached `HiDream-ai/HiDream-O1-Image` configured.
+1. Deploy the dynamic image with cached `HiDream-ai/HiDream-O1-Image` configured.
 2. Submit the text-to-image example and confirm `image_url`, dimensions, seed,
    mode, model ID, and attention backend are returned.
 3. Submit the edit example and confirm a single reference image is downloaded

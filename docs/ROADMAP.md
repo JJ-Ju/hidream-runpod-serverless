@@ -17,7 +17,8 @@ Deliverables:
 - Runtime package with request validation, model/cache resolution, mode
   detection, image generation orchestration, and output upload.
 - Thin `handler.py` for `runpod.serverless.start`.
-- Stable SDPA/no-flash Docker image and experimental flash-attn Docker image.
+- Dynamic Docker image that auto-selects flash-attn when supported and falls
+  back to SDPA otherwise.
 - GHCR publishing workflow with immutable and channel tags.
 - RunPod deployment guide with endpoint environment settings and smoke tests.
 
@@ -42,4 +43,4 @@ Deliverables:
 - RunPod API deployment/update script if manual console setup becomes tedious.
 - More examples for edit, multi-reference personalization, skeleton, and layout
   conditioning.
-- Release checklist for `vX.Y.Z-sdpa` and `vX.Y.Z-flash` image tags.
+- Release checklist for immutable `vX.Y.Z` image tags.

@@ -39,20 +39,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - variant: sdpa
-            channel_tag: latest
-            attention_backend: sdpa
-            bootstrap_flash_attn: 0
-            base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
-          - variant: flash
-            channel_tag: flash
-            attention_backend: auto
-            bootstrap_flash_attn: 1
-            base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,9 +62,9 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=sha,prefix=sha-,suffix=-${{ matrix.variant }}
-            type=raw,value=${{ matrix.channel_tag }},enable={{is_default_branch}}
-            type=semver,pattern={{raw}},suffix=-${{ matrix.variant }}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{raw}}
 
       - name: Build and optionally push image
         uses: docker/build-push-action@v6
@@ -88,10 +74,10 @@ jobs:
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           build-args: |
-            ATTENTION_BACKEND=${{ matrix.attention_backend }}
-            BOOTSTRAP_FLASH_ATTN=${{ matrix.bootstrap_flash_attn }}
-            BASE_IMAGE=${{ matrix.base_image }}
+            ATTENTION_BACKEND=auto
+            BOOTSTRAP_FLASH_ATTN=1
+            BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime@sha256:b85566342b86d13a67712e9315d40cdc2dad7f8d86df1aff3831f80835edbcca
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.variant }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.variant }}
+          cache-from: type=gha,scope=dynamic
+          cache-to: type=gha,mode=max,scope=dynamic
