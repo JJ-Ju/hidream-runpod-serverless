@@ -5,7 +5,9 @@
 This repository builds a RunPod Serverless worker image for
 `HiDream-ai/HiDream-O1-Image`. The worker loads cached model weights, accepts
 RunPod queue jobs, generates images with upstream HiDream inference code, stores
-returns direct image bytes, S3-compatible URL metadata, or both.
+and returns direct image bytes, S3-compatible URL metadata, or both. It is meant
+to serve both prompt-only generation and image preprocessing/editing pipelines
+that feed downstream stages such as 3D model generation.
 
 ## Public Contract
 
@@ -21,6 +23,9 @@ Optional:
 - `seed`: integer, default `32`.
 - `model_type`: `full` or `dev`, default `full`.
 - `ref_images`: up to 10 public image URLs or small base64/data URI images.
+- `input_image`, `init_image`, `image`, or `ref_image`: single-image aliases
+  for edit jobs. Use these instead of `ref_images` when submitting exactly one
+  source image.
 - `layout_bboxes`: array/object accepted by upstream HiDream layout handling.
 - `keep_original_aspect`: boolean, default `false`.
 - `editing_scheduler`: `flow_match` or `flash`, default `flow_match`.

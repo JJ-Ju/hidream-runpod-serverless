@@ -133,15 +133,20 @@ override the default with their own `output_delivery` value.
 }
 ```
 
-## Example Edit Job
+## Example Image Editing Job
+
+This is the single-image path for preprocessing an image before a downstream
+pipeline, including 3D generation. `input_image`, `init_image`, `image`, and
+`ref_image` are accepted single-image aliases for `ref_images: ["..."]`.
 
 ```json
 {
   "input": {
-    "prompt": "Remove the sunglasses while preserving the person's identity and lighting.",
-    "ref_images": ["https://example.com/input/person.png"],
+    "prompt": "Convert this source render into a clean front-facing asset image with crisp silhouette edges and neutral studio lighting.",
+    "input_image": "https://example.com/source/render.png",
     "keep_original_aspect": true,
-    "output_format": "webp"
+    "output_format": "png",
+    "output_delivery": "base64"
   }
 }
 ```
@@ -160,7 +165,8 @@ reference payloads larger than 20 MB.
       "https://example.com/ref/front.png",
       "https://example.com/ref/side.png"
     ],
-    "seed": 42
+    "seed": 42,
+    "output_delivery": "base64"
   }
 }
 ```
@@ -178,7 +184,8 @@ reference payloads larger than 20 MB.
     "layout_bboxes": [
       [0.20507812, 0.43945312, 0.48828125, 0.7421875],
       [0.57617188, 0.80078125, 0.08789062, 0.34179688]
-    ]
+    ],
+    "output_delivery": "base64"
   }
 }
 ```

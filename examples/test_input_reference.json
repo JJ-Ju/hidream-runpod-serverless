@@ -6,6 +6,7 @@
       "https://example.com/ref/side.png"
     ],
     "seed": 42,
-    "output_format": "png"
+    "output_format": "png",
+    "output_delivery": "base64"
   }
 }

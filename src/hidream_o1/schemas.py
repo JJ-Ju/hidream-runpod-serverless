@@ -23,6 +23,7 @@ SUPPORTED_EDITING_SCHEDULERS = {"flow_match", "flash"}
 MAX_DIMENSION = 2048
 MAX_REFERENCE_IMAGES = 10
 MAX_PROMPT_CHARS = 12000
+SINGLE_REFERENCE_ALIASES = ("ref_image", "input_image", "init_image", "image")
 
 
 @dataclass(frozen=True)
@@ -55,7 +56,7 @@ class GenerationRequest:
         if len(prompt) > MAX_PROMPT_CHARS:
             raise RequestValidationError(f"prompt must be {MAX_PROMPT_CHARS} characters or fewer")
 
-        ref_images = _string_list(data.get("ref_images", []), "ref_images")
+        ref_images = _reference_images(data)
         if len(ref_images) > MAX_REFERENCE_IMAGES:
             raise RequestValidationError(f"ref_images cannot contain more than {MAX_REFERENCE_IMAGES} entries")
         output_format = _string_choice(
@@ -159,6 +160,30 @@ def _string_list(value: Any, field_name: str) -> list[str]:
             raise RequestValidationError(f"{field_name} must contain only non-empty strings")
         result.append(item.strip())
     return result
+
+
+def _reference_images(data: dict[str, Any]) -> list[str]:
+    ref_images = data.get("ref_images")
+    single_refs = [
+        (field_name, data[field_name])
+        for field_name in SINGLE_REFERENCE_ALIASES
+        if field_name in data and data[field_name] is not None
+    ]
+    if ref_images is not None and single_refs:
+        raise RequestValidationError("use ref_images or one single-image alias, not both")
+    if len(single_refs) > 1:
+        raise RequestValidationError(
+            f"use only one single-image alias: {', '.join(SINGLE_REFERENCE_ALIASES)}"
+        )
+    if ref_images is not None:
+        return _string_list(ref_images, "ref_images")
+    if not single_refs:
+        return []
+
+    field_name, value = single_refs[0]
+    if not isinstance(value, str) or not value.strip():
+        raise RequestValidationError(f"{field_name} must be a non-empty string")
+    return [value.strip()]
 
 
 def _positive_int(value: Any, field_name: str) -> int:

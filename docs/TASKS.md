@@ -17,6 +17,7 @@
 - [x] Add image input preparation for URLs and base64 references.
 - [x] Add S3-compatible output upload and URL response metadata.
 - [x] Add first-class direct base64 output delivery for pipeline workflows.
+- [x] Add single-image edit aliases for image-to-image pipeline inputs.
 - [x] Add thin RunPod `handler.py` entrypoint.
 
 ## Workstream C: Upstream HiDream Integration

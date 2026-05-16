@@ -74,10 +74,47 @@ cache under `/tmp/hidream-runtime`.
    }
    ```
 
+   For a 3D pipeline that needs to process an existing image before the next
+   stage, submit an edit job with a source image and direct output:
+
+   ```json
+   {
+     "input": {
+       "prompt": "Convert this render into a clean front-facing asset image with crisp silhouette edges and neutral studio lighting.",
+       "input_image": "https://example.com/source/render.png",
+       "keep_original_aspect": true,
+       "output_format": "png",
+       "output_delivery": "base64"
+     }
+   }
+   ```
+
 7. Leave `ATTENTION_BACKEND=auto` for normal use. The worker will use flash-attn
    when it is available for the live hardware and fall back to SDPA otherwise.
    Set `ATTENTION_BACKEND=sdpa` only when you want to disable flash-attn
    explicitly.
+
+## Supported Job Modes
+
+This is not prompt-only. The same endpoint supports the O1 reference-image
+workflows used by image preprocessing and 3D generation pipelines:
+
+- Text-to-image: send `prompt` without image inputs. Response mode is
+  `text_to_image`.
+- Single-image editing: send one source image with `input_image`, `init_image`,
+  `image`, `ref_image`, or canonical `ref_images: ["..."]`. Response mode is
+  `edit`.
+- Multi-reference personalization: send two or more entries in `ref_images`.
+  Response mode is `reference`.
+- Layout-conditioned reference generation: send `ref_images` plus one
+  normalized `[x1, x2, y1, y2]` box per image in `layout_bboxes`. Response mode
+  is `layout_reference`.
+
+Image inputs can be public image URLs, presigned URLs, base64 strings, or image
+data URIs. Local file paths and private-network URLs are rejected before GPU
+work. For chained 3D workflows, set `DEFAULT_OUTPUT_DELIVERY=base64` on the
+endpoint or pass `output_delivery=base64` per job so the next stage can consume
+the image bytes directly.
 
 ## Required RunPod Environment
 

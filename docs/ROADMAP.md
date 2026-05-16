@@ -9,8 +9,10 @@ GitHub Container Registry, and linked from a RunPod endpoint.
 ## Phase 1: Serverless Worker Template
 
 Outcome: a working worker repository that accepts RunPod jobs, loads a cached
-HiDream checkpoint, generates images for every upstream O1 mode, stores outputs
-in S3-compatible object storage, and returns stable metadata.
+HiDream checkpoint, generates images for every upstream O1 mode, supports
+single-image preprocessing/editing for downstream 3D workflows, stores outputs
+in S3-compatible object storage or returns them directly, and returns stable
+metadata.
 
 Deliverables:
 

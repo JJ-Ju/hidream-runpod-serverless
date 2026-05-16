@@ -39,6 +39,19 @@ def test_request_detects_edit_reference_and_layout_modes():
     assert layout.mode == GenerationMode.LAYOUT_REFERENCE
 
 
+def test_request_accepts_single_image_edit_aliases():
+    for field_name in ("ref_image", "input_image", "init_image", "image"):
+        request = GenerationRequest.from_input(
+            {
+                "prompt": "clean up this source render",
+                field_name: "https://example.com/source.png",
+            }
+        )
+
+        assert request.ref_images == ["https://example.com/source.png"]
+        assert request.mode == GenerationMode.EDIT
+
+
 def test_request_rejects_invalid_prompt_and_format():
     with pytest.raises(RequestValidationError, match="prompt"):
         GenerationRequest.from_input({"prompt": "   "})
@@ -68,6 +81,18 @@ def test_request_rejects_bad_reference_images():
 
     with pytest.raises(RequestValidationError, match="ref_images"):
         GenerationRequest.from_input({"prompt": "x", "ref_images": [""]})
+
+    with pytest.raises(RequestValidationError, match="single-image alias"):
+        GenerationRequest.from_input(
+            {
+                "prompt": "x",
+                "ref_images": ["https://example.com/a.png"],
+                "input_image": "https://example.com/b.png",
+            }
+        )
+
+    with pytest.raises(RequestValidationError, match="input_image"):
+        GenerationRequest.from_input({"prompt": "x", "input_image": ""})
 
 
 def test_request_rejects_resource_exhaustion_values():

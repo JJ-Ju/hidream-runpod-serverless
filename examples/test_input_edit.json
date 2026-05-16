@@ -1,8 +1,9 @@
 {
   "input": {
-    "prompt": "Remove the sunglasses while preserving the person's identity, pose, and lighting.",
-    "ref_images": ["https://example.com/input/person.png"],
+    "prompt": "Convert this source render into a clean front-facing asset image with crisp silhouette edges and neutral studio lighting.",
+    "input_image": "https://example.com/source/render.png",
     "keep_original_aspect": true,
-    "output_format": "webp"
+    "output_format": "png",
+    "output_delivery": "base64"
   }
 }
