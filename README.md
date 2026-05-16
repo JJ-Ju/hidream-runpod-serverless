@@ -126,6 +126,87 @@ the generated image bytes directly.
 
 ## Required RunPod Environment
 
+Use one of these profiles in the RunPod environment variable editor.
+
+### Direct Input And Direct Output
+
+Use this for a pipeline that sends source images directly in the request and
+expects generated image bytes directly in the response. No input bucket, output
+bucket, or exposed port is required.
+
+```text
+HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
+HIDREAM_HF_CACHE_ROOT=/runpod-volume/huggingface-cache/hub
+DEFAULT_OUTPUT_DELIVERY=base64
+ATTENTION_BACKEND=auto
+HIDREAM_BOOTSTRAP_DEPS=1
+BOOTSTRAP_FLASH_ATTN=1
+FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
+FLASH_ATTN_FALLBACK_BACKEND=sdpa
+WORK_DIR=/tmp/hidream-o1
+```
+
+Submit direct image input in the job payload:
+
+```json
+{
+  "input": {
+    "prompt": "Clean this source image for a downstream 3D reconstruction stage.",
+    "input_image": {
+      "base64": "<base64-encoded-source-image>",
+      "mime_type": "image/png"
+    },
+    "output_delivery": "base64"
+  }
+}
+```
+
+### Direct Input And S3 Output
+
+Use this when the source image still arrives directly in the request, but the
+generated output should be uploaded to S3-compatible storage and returned as
+`image_url`, `bucket`, and `key`.
+
+```text
+HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
+HIDREAM_HF_CACHE_ROOT=/runpod-volume/huggingface-cache/hub
+DEFAULT_OUTPUT_DELIVERY=url
+ATTENTION_BACKEND=auto
+HIDREAM_BOOTSTRAP_DEPS=1
+BOOTSTRAP_FLASH_ATTN=1
+FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
+FLASH_ATTN_FALLBACK_BACKEND=sdpa
+WORK_DIR=/tmp/hidream-o1
+OUTPUT_PREFIX=hidream-o1
+S3_ENDPOINT_URL=https://<s3-compatible-endpoint>
+S3_REGION=auto
+S3_BUCKET=<bucket-name>
+S3_ACCESS_KEY_ID=<access-key>
+S3_SECRET_ACCESS_KEY=<secret-key>
+S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
+```
+
+`S3_PUBLIC_BASE_URL` is optional. If it is omitted, the worker returns a
+presigned URL for the uploaded object.
+
+Submit the same direct image input shape and either omit `output_delivery` or
+set it to `url`:
+
+```json
+{
+  "input": {
+    "prompt": "Clean this source image for a downstream 3D reconstruction stage.",
+    "input_image": {
+      "base64": "<base64-encoded-source-image>",
+      "mime_type": "image/png"
+    },
+    "output_delivery": "url"
+  }
+}
+```
+
+### Reference
+
 ```text
 HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
 HIDREAM_HF_CACHE_ROOT=/runpod-volume/huggingface-cache/hub
