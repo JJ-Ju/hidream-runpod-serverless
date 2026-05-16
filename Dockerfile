@@ -16,7 +16,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         git \
+        python3-venv \
     && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv --system-site-packages /opt/venv
+ENV PATH=/opt/venv/bin:${PATH}
 
 COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --no-cache-dir --upgrade pip \
