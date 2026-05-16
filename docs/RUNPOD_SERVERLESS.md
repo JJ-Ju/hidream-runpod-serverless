@@ -133,22 +133,41 @@ override the default with their own `output_delivery` value.
 }
 ```
 
-## Example Edit Job
+## Example Image Editing Job
+
+This is the single-image path for preprocessing an image before a downstream
+pipeline, including 3D generation. The input image does not need to be hosted.
+`input_image`, `init_image`, `image`, and `ref_image` are accepted single-image
+aliases. For multiple inputs, use `input_images` or `ref_images`.
 
 ```json
 {
   "input": {
-    "prompt": "Remove the sunglasses while preserving the person's identity and lighting.",
-    "ref_images": ["https://example.com/input/person.png"],
+    "prompt": "Convert this source render into a clean front-facing asset image with crisp silhouette edges and neutral studio lighting.",
+    "input_image": {
+      "base64": "<base64-encoded-source-image>",
+      "mime_type": "image/png"
+    },
     "keep_original_aspect": true,
-    "output_format": "webp"
+    "output_format": "png",
+    "output_delivery": "base64"
   }
 }
 ```
 
-Reference images must be public image URLs or small base64/data URI payloads.
-The worker rejects local file paths, private-network URLs, non-image content, and
-reference payloads larger than 20 MB.
+Reference images can be direct payload objects, plain base64 strings, image data
+URIs, public URLs, or presigned URLs. Direct payload objects are preferred for
+pipeline input:
+
+```json
+{
+  "base64": "<base64-encoded-image>",
+  "mime_type": "image/png"
+}
+```
+
+The worker rejects local file paths, private-network URLs, non-image content,
+and reference payloads larger than 20 MB.
 
 ## Example Multi-Reference Job
 
@@ -156,11 +175,18 @@ reference payloads larger than 20 MB.
 {
   "input": {
     "prompt": "Place the referenced character in a neon-lit market at night, preserving their face and outfit.",
-    "ref_images": [
-      "https://example.com/ref/front.png",
-      "https://example.com/ref/side.png"
+    "input_images": [
+      {
+        "base64": "<base64-encoded-front-reference>",
+        "mime_type": "image/png"
+      },
+      {
+        "base64": "<base64-encoded-side-reference>",
+        "mime_type": "image/png"
+      }
     ],
-    "seed": 42
+    "seed": 42,
+    "output_delivery": "base64"
   }
 }
 ```
@@ -171,14 +197,21 @@ reference payloads larger than 20 MB.
 {
   "input": {
     "prompt": "Two city council members pose on a sunlit terrace, warm approachable mood.",
-    "ref_images": [
-      "https://example.com/ref/person-a.png",
-      "https://example.com/ref/person-b.png"
+    "input_images": [
+      {
+        "base64": "<base64-encoded-person-a>",
+        "mime_type": "image/png"
+      },
+      {
+        "base64": "<base64-encoded-person-b>",
+        "mime_type": "image/png"
+      }
     ],
     "layout_bboxes": [
       [0.20507812, 0.43945312, 0.48828125, 0.7421875],
       [0.57617188, 0.80078125, 0.08789062, 0.34179688]
-    ]
+    ],
+    "output_delivery": "base64"
   }
 }
 ```

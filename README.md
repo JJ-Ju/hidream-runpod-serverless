@@ -74,10 +74,55 @@ cache under `/tmp/hidream-runtime`.
    }
    ```
 
+   For a 3D pipeline that needs to process an existing image before the next
+   stage, submit an edit job with a source image and direct output:
+
+   ```json
+   {
+     "input": {
+       "prompt": "Convert this render into a clean front-facing asset image with crisp silhouette edges and neutral studio lighting.",
+       "input_image": {
+         "base64": "<base64-encoded-source-image>",
+         "mime_type": "image/png"
+       },
+       "keep_original_aspect": true,
+       "output_format": "png",
+       "output_delivery": "base64"
+     }
+   }
+   ```
+
 7. Leave `ATTENTION_BACKEND=auto` for normal use. The worker will use flash-attn
    when it is available for the live hardware and fall back to SDPA otherwise.
    Set `ATTENTION_BACKEND=sdpa` only when you want to disable flash-attn
    explicitly.
+
+## Supported Job Modes
+
+This is not prompt-only. The same endpoint supports the O1 reference-image
+workflows used by image preprocessing and 3D generation pipelines:
+
+- Text-to-image: send `prompt` without image inputs. Response mode is
+  `text_to_image`.
+- Single-image editing: send one direct source image payload with `input_image`,
+  `init_image`, `image`, `ref_image`, or canonical `ref_images: [{...}]`.
+  Response mode is `edit`.
+- Multi-reference personalization: send two or more entries in `input_images`
+  or `ref_images`.
+  Response mode is `reference`.
+- Layout-conditioned reference generation: send `input_images` or `ref_images`
+  plus one
+  normalized `[x1, x2, y1, y2]` box per image in `layout_bboxes`. Response mode
+  is `layout_reference`.
+
+Image inputs do not need to be hosted anywhere. Use direct payload objects:
+`{"base64": "...", "mime_type": "image/png"}` or
+`{"data_uri": "data:image/png;base64,..."}`. Plain base64 strings and public or
+presigned URLs are also accepted for compatibility, but direct payloads are the
+recommended path for chained 3D workflows. Local file paths and private-network
+URLs are rejected before GPU work. Set `DEFAULT_OUTPUT_DELIVERY=base64` on the
+endpoint or pass `output_delivery=base64` per job so the next stage can consume
+the generated image bytes directly.
 
 ## Required RunPod Environment
 
@@ -111,8 +156,10 @@ MAX_JOBS=4
 ATTENTION_BACKEND=auto
 ```
 
-Reference images must be public image URLs or small base64/data URI payloads.
-Local file paths and private-network URLs are rejected.
+Reference images can be direct base64/data URI payloads or public/presigned
+URLs. Direct payload objects are preferred for pipeline input:
+`{"base64": "...", "mime_type": "image/png"}`. Local file paths and
+private-network URLs are rejected.
 
 ## Output Delivery
 

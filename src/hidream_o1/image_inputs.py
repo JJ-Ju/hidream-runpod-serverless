@@ -5,6 +5,7 @@ import binascii
 import ipaddress
 import socket
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -12,7 +13,7 @@ from uuid import uuid4
 MAX_REFERENCE_BYTES = 20 * 1024 * 1024
 
 
-def prepare_reference_images(ref_images: list[str], work_dir: Path) -> list[str]:
+def prepare_reference_images(ref_images: list[Any], work_dir: Path) -> list[str]:
     if not ref_images:
         return []
 
@@ -24,7 +25,12 @@ def prepare_reference_images(ref_images: list[str], work_dir: Path) -> list[str]
     return prepared
 
 
-def _prepare_single_reference(source: str, refs_dir: Path, index: int) -> Path:
+def _prepare_single_reference(source: Any, refs_dir: Path, index: int) -> Path:
+    if isinstance(source, dict):
+        return _prepare_reference_object(source, refs_dir, index)
+    if not isinstance(source, str):
+        raise ValueError("ref_images entries must be strings or image payload objects")
+
     parsed = urlparse(source)
     if parsed.scheme in {"http", "https"}:
         return _download_reference(source, refs_dir, index)
@@ -41,6 +47,31 @@ def _prepare_single_reference(source: str, refs_dir: Path, index: int) -> Path:
         raise ValueError("Local reference paths are not accepted by the public worker")
 
     return _write_base64(source, refs_dir / f"ref-{index}-{uuid4().hex[:8]}.png")
+
+
+def _prepare_reference_object(source: dict[str, Any], refs_dir: Path, index: int) -> Path:
+    url = source.get("url") or source.get("image_url")
+    if url:
+        if not isinstance(url, str):
+            raise ValueError("ref_images object URLs must be strings")
+        return _download_reference(url, refs_dir, index)
+
+    data_uri = source.get("data_uri")
+    if data_uri:
+        if not isinstance(data_uri, str):
+            raise ValueError("ref_images object data_uri values must be strings")
+        return _prepare_single_reference(data_uri, refs_dir, index)
+
+    encoded = source.get("base64") or source.get("image_base64")
+    if not encoded:
+        raise ValueError("ref_images objects must contain url, image_url, data_uri, base64, or image_base64")
+    if not isinstance(encoded, str):
+        raise ValueError("ref_images object base64 values must be strings")
+    content_type = source.get("mime_type") or source.get("content_type") or "image/png"
+    if not isinstance(content_type, str):
+        raise ValueError("ref_images object content types must be strings")
+    extension = _extension_from_content_type(content_type)
+    return _write_base64(encoded, refs_dir / f"ref-{index}-{uuid4().hex[:8]}{extension}")
 
 
 def _download_reference(url: str, refs_dir: Path, index: int) -> Path:
@@ -74,7 +105,7 @@ def _write_base64(encoded: str, path: Path) -> Path:
     try:
         data = base64.b64decode(encoded, validate=True)
     except (binascii.Error, ValueError) as exc:
-        raise ValueError("ref_images entries must be public image URLs or base64 image data") from exc
+        raise ValueError("ref_images entries must be image URLs, data URIs, or base64 image data") from exc
     if len(data) > MAX_REFERENCE_BYTES:
         raise ValueError(f"ref_images base64 payloads are too large; max is {MAX_REFERENCE_BYTES} bytes")
     path.write_bytes(data)

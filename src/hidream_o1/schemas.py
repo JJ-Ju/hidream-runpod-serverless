@@ -23,6 +23,7 @@ SUPPORTED_EDITING_SCHEDULERS = {"flow_match", "flash"}
 MAX_DIMENSION = 2048
 MAX_REFERENCE_IMAGES = 10
 MAX_PROMPT_CHARS = 12000
+SINGLE_REFERENCE_ALIASES = ("ref_image", "input_image", "init_image", "image")
 
 
 @dataclass(frozen=True)
@@ -32,7 +33,7 @@ class GenerationRequest:
     height: int = 2048
     seed: int = 32
     model_type: str = "full"
-    ref_images: list[str] = field(default_factory=list)
+    ref_images: list[Any] = field(default_factory=list)
     layout_bboxes: Any | None = None
     keep_original_aspect: bool = False
     editing_scheduler: str = "flow_match"
@@ -55,7 +56,7 @@ class GenerationRequest:
         if len(prompt) > MAX_PROMPT_CHARS:
             raise RequestValidationError(f"prompt must be {MAX_PROMPT_CHARS} characters or fewer")
 
-        ref_images = _string_list(data.get("ref_images", []), "ref_images")
+        ref_images = _reference_images(data)
         if len(ref_images) > MAX_REFERENCE_IMAGES:
             raise RequestValidationError(f"ref_images cannot contain more than {MAX_REFERENCE_IMAGES} entries")
         output_format = _string_choice(
@@ -148,17 +149,76 @@ def _string_choice(value: Any, choices: set[str], field_name: str) -> str:
     return normalized
 
 
-def _string_list(value: Any, field_name: str) -> list[str]:
+def _reference_image_list(value: Any, field_name: str) -> list[Any]:
     if value is None:
         return []
     if not isinstance(value, list):
-        raise RequestValidationError(f"{field_name} must be an array of strings")
+        raise RequestValidationError(f"{field_name} must be an array of image references")
     result = []
     for item in value:
-        if not isinstance(item, str) or not item.strip():
-            raise RequestValidationError(f"{field_name} must contain only non-empty strings")
-        result.append(item.strip())
+        result.append(_reference_image_source(item, field_name))
     return result
+
+
+def _reference_images(data: dict[str, Any]) -> list[Any]:
+    ref_images = data.get("ref_images")
+    input_images = data.get("input_images")
+    single_refs = [
+        (field_name, data[field_name])
+        for field_name in SINGLE_REFERENCE_ALIASES
+        if field_name in data and data[field_name] is not None
+    ]
+    multi_refs = [field_name for field_name, value in (("ref_images", ref_images), ("input_images", input_images)) if value is not None]
+    if len(multi_refs) > 1:
+        raise RequestValidationError("use ref_images or input_images, not both")
+    if multi_refs and single_refs:
+        raise RequestValidationError("use input_images/ref_images or one single-image alias, not both")
+    if len(single_refs) > 1:
+        raise RequestValidationError(
+            f"use only one single-image alias: {', '.join(SINGLE_REFERENCE_ALIASES)}"
+        )
+    if ref_images is not None:
+        return _reference_image_list(ref_images, "ref_images")
+    if input_images is not None:
+        return _reference_image_list(input_images, "input_images")
+    if not single_refs:
+        return []
+
+    field_name, value = single_refs[0]
+    return [_reference_image_source(value, field_name)]
+
+
+def _reference_image_source(value: Any, field_name: str) -> Any:
+    if isinstance(value, str):
+        if not value.strip():
+            raise RequestValidationError(f"{field_name} must contain non-empty image references")
+        return value.strip()
+    if not isinstance(value, dict):
+        raise RequestValidationError(
+            f"{field_name} entries must be strings or objects with url, data_uri, or base64"
+        )
+
+    source_keys = [
+        key
+        for key in ("url", "image_url", "data_uri", "base64", "image_base64")
+        if value.get(key) is not None
+    ]
+    if len(source_keys) != 1:
+        raise RequestValidationError(
+            f"{field_name} image objects must contain exactly one of url, image_url, data_uri, base64, image_base64"
+        )
+    source_value = value[source_keys[0]]
+    if not isinstance(source_value, str) or not source_value.strip():
+        raise RequestValidationError(f"{field_name}.{source_keys[0]} must be a non-empty string")
+
+    normalized = {source_keys[0]: source_value.strip()}
+    for metadata_key in ("mime_type", "content_type"):
+        metadata_value = value.get(metadata_key)
+        if metadata_value is not None:
+            if not isinstance(metadata_value, str) or not metadata_value.strip():
+                raise RequestValidationError(f"{field_name}.{metadata_key} must be a non-empty string")
+            normalized[metadata_key] = metadata_value.strip()
+    return normalized
 
 
 def _positive_int(value: Any, field_name: str) -> int:
