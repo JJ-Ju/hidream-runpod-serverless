@@ -28,6 +28,16 @@ that exact runtime, the worker starts with flash attention. Otherwise it falls
 back to SDPA and still serves requests. If pip must compile from source, seed the
 cache from a CUDA devel Pod attached to the same network volume.
 
+The container uses the official PyTorch
+`pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime` image, pinned by digest, so
+Python 3.12, CUDA 12.8, cuDNN 9, and PyTorch 2.10.0 come from a known upstream
+base. App dependencies are installed into a hash-keyed virtual environment under
+`/runpod-volume/hidream-runtime/envs` when a writable network volume is present.
+The venv inherits the base PyTorch stack instead of reinstalling it. A fresh
+volume pays the app dependency install cost once; later workers reuse the cached
+environment. Without a writable volume, the worker falls back to an ephemeral
+cache under `/tmp/hidream-runtime`.
+
 ## Required RunPod Environment
 
 ```text
@@ -47,6 +57,7 @@ S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
 ALLOW_BASE64_OUTPUT=1
 OUTPUT_PREFIX=hidream-o1
 BOOTSTRAP_FLASH_ATTN=1
+HIDREAM_BOOTSTRAP_DEPS=1
 FLASH_ATTN_PACKAGE=flash-attn
 FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
 FLASH_ATTN_FALLBACK_BACKEND=sdpa
@@ -55,6 +66,13 @@ MAX_JOBS=4
 
 Reference images must be public image URLs or small base64/data URI payloads.
 Local file paths and private-network URLs are rejected.
+
+## Ports
+
+No container ports need to be exposed for RunPod Serverless. This image starts
+`handler.py`, which calls `runpod.serverless.start(...)` and receives jobs
+through RunPod's serverless queue/control plane. Do not configure an HTTP server,
+container port, or `EXPOSE` directive unless you add a separate debugging server.
 
 ## Local Tests
 

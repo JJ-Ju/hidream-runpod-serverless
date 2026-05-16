@@ -56,6 +56,16 @@ Response returns:
   startup, uses flash-attn when available or cacheable, falls back to SDPA when
   not, and caches matching wheels on the attached network volume under
   `/runpod-volume/flash-attn-cache`.
+- The container uses the official
+  `pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime` base, pinned by digest, for
+  Python 3.12, CUDA 12.8, cuDNN 9, and PyTorch 2.10.0. Runtime app dependencies
+  are installed into a versioned virtual environment on the attached network
+  volume when present. The venv inherits the base PyTorch stack with
+  `--system-site-packages`. The environment cache key includes the locked
+  Python/CUDA/Torch/TorchVision versions, platform, and dependency requirement
+  hashes so incompatible dependency sets do not share an environment.
+- If `/runpod-volume` is not writable, the worker falls back to an ephemeral
+  dependency cache under `/tmp` and still starts.
 - Tests cover validation, mode detection, cache resolution, storage URL behavior,
   output key generation, and handler delegation without requiring CUDA/model
   weights.

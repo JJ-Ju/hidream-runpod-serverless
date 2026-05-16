@@ -24,6 +24,19 @@ Docker build runner has no RunPod GPU attached. Instead it starts with
 startup, and writes the selected backend into the environment before launching
 the worker.
 
+The image uses the official PyTorch
+`pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime` base, pinned by digest. That
+base provides Python 3.12, CUDA 12.8, cuDNN 9, and PyTorch 2.10.0. The production
+app dependency environment is installed at startup into a versioned virtual
+environment under `/runpod-volume/hidream-runtime/envs` when a network volume is
+attached and writable. The venv is created with `--system-site-packages` so it
+inherits the base PyTorch/CUDA stack instead of reinstalling it. The cache key
+includes Python, CUDA, Torch, TorchVision, platform, and dependency file hashes.
+A fresh volume pays the one-time app dependency install cost; later workers
+attached to the same volume activate the cached environment. If `/runpod-volume`
+is unavailable, the same logic falls back to `/tmp/hidream-runtime`, which is
+ephemeral.
+
 For flash testing, attach a RunPod network volume. Serverless workers mount that
 volume at `/runpod-volume`, and the worker caches built flash-attn wheels under
 `/runpod-volume/flash-attn-cache`. The cache key includes the detected GPU
@@ -65,6 +78,8 @@ HIDREAM_MODEL_PATH=/explicit/local/model/path
 S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
 ALLOW_BASE64_OUTPUT=1
 OUTPUT_PREFIX=hidream-o1
+HIDREAM_BOOTSTRAP_DEPS=1
+HIDREAM_DEPENDENCY_FALLBACK_ROOT=/tmp/hidream-runtime
 BOOTSTRAP_FLASH_ATTN=1
 FLASH_ATTN_PACKAGE=flash-attn
 FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
@@ -72,8 +87,11 @@ FLASH_ATTN_FALLBACK_BACKEND=sdpa
 MAX_JOBS=4
 ```
 
-`HIDREAM_MODEL_PATH` bypasses cache resolution. `S3_PUBLIC_BASE_URL` returns
-deterministic public object URLs; without it, the worker creates presigned URLs.
+`HIDREAM_MODEL_PATH` bypasses cache resolution. Leave
+`HIDREAM_RUNTIME_CACHE_ROOT` unset unless you intentionally want to override the
+auto-selected persistent/ephemeral dependency cache path. `S3_PUBLIC_BASE_URL`
+returns deterministic public object URLs; without it, the worker creates
+presigned URLs.
 
 ## Example Text-To-Image Job
 
