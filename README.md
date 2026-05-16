@@ -281,3 +281,9 @@ preserved in `src/hidream_o1/vendor/UPSTREAM_LICENSE`.
 
 See [`docs/RUNPOD_SERVERLESS.md`](docs/RUNPOD_SERVERLESS.md) for endpoint
 settings, example payloads, and GPU smoke tests.
+
+## GUI And Pipeline Clients
+
+See [`docs/CLIENT_API.md`](docs/CLIENT_API.md) for the client-facing API
+contract, RunPod `/runsync` and `/run` request shapes, TypeScript types, direct
+image payload helpers, response handling, and GUI error-state guidance.

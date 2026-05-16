@@ -23,6 +23,8 @@
 - [x] Add `input_images` as the pipeline-facing alias for multi-image inputs.
 - [x] Document complete RunPod env profiles for direct input/direct output and
   direct input/S3 output.
+- [x] Add GUI/client API guide with RunPod envelopes, TypeScript contracts,
+  direct image helpers, async polling, and error handling.
 - [x] Add thin RunPod `handler.py` entrypoint.
 
 ## Workstream C: Upstream HiDream Integration
