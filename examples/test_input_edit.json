@@ -1,0 +1,8 @@
+{
+  "input": {
+    "prompt": "Remove the sunglasses while preserving the person's identity, pose, and lighting.",
+    "ref_images": ["https://example.com/input/person.png"],
+    "keep_original_aspect": true,
+    "output_format": "webp"
+  }
+}
