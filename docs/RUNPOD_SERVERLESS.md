@@ -21,8 +21,14 @@ flash-attn testing.
 The flash image does not compile `flash-attn` during GitHub Actions because the
 Docker build runner has no RunPod GPU attached. Instead it uses a CUDA devel
 base and bootstraps `flash-attn` at container startup when
-`BOOTSTRAP_FLASH_ATTN=1`. This can add several minutes to each cold start and
-should be tested before production use.
+`BOOTSTRAP_FLASH_ATTN=1`.
+
+For flash testing, attach a RunPod network volume. Serverless workers mount that
+volume at `/runpod-volume`, and the worker caches built flash-attn wheels under
+`/runpod-volume/flash-attn-cache`. The cache key includes the detected GPU
+compute capability, CUDA version, PyTorch version, Python ABI, platform, and
+`FLASH_ATTN_PACKAGE`. The first cold start per unique runtime may take several
+minutes; later starts can install the cached wheel.
 
 ## RunPod Endpoint Settings
 
@@ -56,6 +62,7 @@ ALLOW_BASE64_OUTPUT=1
 OUTPUT_PREFIX=hidream-o1
 BOOTSTRAP_FLASH_ATTN=1
 FLASH_ATTN_PACKAGE=flash-attn
+FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
 MAX_JOBS=4
 ```
 

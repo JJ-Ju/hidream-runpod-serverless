@@ -11,8 +11,8 @@ def test_dockerfile_bootstraps_flash_at_runtime_not_build_time():
     assert "ENTRYPOINT" in dockerfile
     assert "BOOTSTRAP_FLASH_ATTN" in dockerfile
     assert "pip install --no-cache-dir --no-build-isolation flash-attn" not in dockerfile
-    assert "pip install --no-cache-dir --no-build-isolation" in entrypoint
-    assert "FLASH_ATTN_PACKAGE:-flash-attn" in entrypoint
+    assert "python -m hidream_o1.flash_bootstrap" in entrypoint
+    assert "FLASH_ATTN_CACHE_DIR:-/runpod-volume/flash-attn-cache" in entrypoint
 
 
 def test_github_workflow_enables_flash_bootstrap_for_flash_variant():

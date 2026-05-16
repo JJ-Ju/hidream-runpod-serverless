@@ -22,7 +22,10 @@ ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>-flash
 
 Use immutable `sha-*` or `vX.Y.Z-*` tags for RunPod production endpoints.
 The flash image bootstraps `flash-attn` at container startup with
-`BOOTSTRAP_FLASH_ATTN=1`, which can add several minutes to cold starts.
+`BOOTSTRAP_FLASH_ATTN=1`. It detects the live GPU, CUDA, PyTorch, Python ABI,
+and platform, then caches the built wheel under `/runpod-volume/flash-attn-cache`
+when a RunPod network volume is attached. The first cold start per unique runtime
+can still take several minutes; later starts can reuse the cached wheel.
 
 ## Required RunPod Environment
 
@@ -44,6 +47,7 @@ ALLOW_BASE64_OUTPUT=1
 OUTPUT_PREFIX=hidream-o1
 BOOTSTRAP_FLASH_ATTN=1
 FLASH_ATTN_PACKAGE=flash-attn
+FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
 MAX_JOBS=4
 ```
 
