@@ -30,8 +30,7 @@ def get_service() -> GenerationService:
             output_prefix=os.environ.get("OUTPUT_PREFIX", "hidream-o1"),
             model_id=runner.model_id,
             attention_backend=runner.attention_backend,
-            allow_base64_output=os.environ.get("ALLOW_BASE64_OUTPUT", "").lower()
-            in {"1", "true", "yes"},
+            default_output_delivery=os.environ.get("DEFAULT_OUTPUT_DELIVERY", "url"),
         )
     return _SERVICE
 

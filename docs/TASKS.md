@@ -16,7 +16,7 @@
 - [x] Add singleton model loading around the upstream HiDream processor/model.
 - [x] Add image input preparation for URLs and base64 references.
 - [x] Add S3-compatible output upload and URL response metadata.
-- [x] Add local-only base64 fallback behind an explicit environment flag.
+- [x] Add first-class direct base64 output delivery for pipeline workflows.
 - [x] Add thin RunPod `handler.py` entrypoint.
 
 ## Workstream C: Upstream HiDream Integration
@@ -29,11 +29,12 @@
 
 ## Workstream D: Container And CI
 
-- [x] Add CUDA/PyTorch Dockerfile with `ATTENTION_BACKEND=sdpa|flash`.
+- [x] Add CUDA/PyTorch Dockerfile with dynamic `ATTENTION_BACKEND=auto`.
 - [x] Add requirements for runtime and test dependencies.
 - [x] Add `.dockerignore`.
 - [x] Add example RunPod payloads.
-- [x] Add GitHub Actions workflow to test and build/publish both GHCR variants.
+- [x] Add GitHub Actions workflow to test and build/publish the dynamic GHCR
+  image.
 
 ## Workstream E: Verification
 

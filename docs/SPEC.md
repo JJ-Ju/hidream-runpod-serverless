@@ -5,7 +5,7 @@
 This repository builds a RunPod Serverless worker image for
 `HiDream-ai/HiDream-O1-Image`. The worker loads cached model weights, accepts
 RunPod queue jobs, generates images with upstream HiDream inference code, stores
-outputs in S3-compatible object storage, and returns URL metadata.
+returns direct image bytes, S3-compatible URL metadata, or both.
 
 ## Public Contract
 
@@ -27,11 +27,15 @@ Optional:
 - `guidance_scale`, `shift`, `noise_scale_start`, `noise_scale_end`,
   `noise_clip_std`: numeric scheduler knobs.
 - `output_format`: `png`, `webp`, or `jpeg`, default `png`.
+- `output_delivery`: `url`, `base64`, or `both`, default `url`.
 
 Response returns:
 
-- `image_url`, `bucket`, `key`, `seed`, `width`, `height`, `mode`, `model_id`,
-  `attention_backend`.
+- Always: `seed`, `width`, `height`, `mode`, `model_id`, `attention_backend`,
+  `output_delivery`, `content_type`, `image_size_bytes`.
+- For `output_delivery=url`: `image_url`, `bucket`, `key`.
+- For `output_delivery=base64`: `image_base64`.
+- For `output_delivery=both`: URL metadata plus `image_base64`.
 
 ## Modes
 
@@ -48,14 +52,16 @@ Response returns:
 - The worker resolves a local cached Hugging Face snapshot from RunPod cache
   conventions unless `HIDREAM_MODEL_PATH` is set.
 - The worker supports all upstream O1 modes through a single RunPod endpoint.
-- Outputs are uploaded through S3-compatible configuration and returned as URLs.
-- Missing object-storage configuration returns a clear error unless
-  `ALLOW_BASE64_OUTPUT=1`.
-- Docker builds provide stable `sdpa` and experimental `flash` variants. The
-  flash image uses `ATTENTION_BACKEND=auto`, detects live RunPod hardware at
-  startup, uses flash-attn when available or cacheable, falls back to SDPA when
-  not, and caches matching wheels on the attached network volume under
-  `/runpod-volume/flash-attn-cache`.
+- Outputs can be returned directly as base64, uploaded through S3-compatible
+  storage and returned as URLs, or both.
+- Missing object-storage configuration returns a clear error only when a job
+  requests `output_delivery=url` or `output_delivery=both`.
+- Docker builds publish one dynamic image. The image uses
+  `ATTENTION_BACKEND=auto`, detects live RunPod hardware at startup, uses
+  flash-attn when available or cacheable, falls back to SDPA when not, and caches
+  matching wheels on the attached network volume under
+  `/runpod-volume/flash-attn-cache`. `ATTENTION_BACKEND=sdpa` remains available
+  as an endpoint-level override for debugging or conservative rollout.
 - The container uses the official
   `pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime` base, pinned by digest, for
   Python 3.12, CUDA 12.8, cuDNN 9, and PyTorch 2.10.0. Runtime app dependencies

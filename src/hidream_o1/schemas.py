@@ -17,6 +17,7 @@ class GenerationMode(str, Enum):
 
 
 SUPPORTED_OUTPUT_FORMATS = {"png", "webp", "jpeg"}
+SUPPORTED_OUTPUT_DELIVERIES = {"url", "base64", "both"}
 SUPPORTED_MODEL_TYPES = {"full", "dev"}
 SUPPORTED_EDITING_SCHEDULERS = {"flow_match", "flash"}
 MAX_DIMENSION = 2048
@@ -41,6 +42,7 @@ class GenerationRequest:
     noise_scale_end: float = 7.5
     noise_clip_std: float = 2.5
     output_format: str = "png"
+    output_delivery: str = "url"
 
     @classmethod
     def from_input(cls, data: dict[str, Any]) -> "GenerationRequest":
@@ -60,6 +62,11 @@ class GenerationRequest:
             data.get("output_format", "png"),
             SUPPORTED_OUTPUT_FORMATS,
             "output_format",
+        )
+        output_delivery = _string_choice(
+            data.get("output_delivery", "url"),
+            SUPPORTED_OUTPUT_DELIVERIES,
+            "output_delivery",
         )
         model_type = _string_choice(
             data.get("model_type", "full"),
@@ -92,6 +99,7 @@ class GenerationRequest:
             noise_scale_end=_bounded_float(data.get("noise_scale_end", 7.5), "noise_scale_end", 0.0, 20.0),
             noise_clip_std=_bounded_float(data.get("noise_clip_std", 2.5), "noise_clip_std", 0.0, 20.0),
             output_format=output_format,
+            output_delivery=output_delivery,
         )
 
     @property

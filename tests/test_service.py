@@ -51,8 +51,11 @@ def test_service_generates_uploads_and_returns_metadata(tmp_path):
     assert result["mode"] == "text_to_image"
     assert result["model_id"] == "HiDream-ai/HiDream-O1-Image"
     assert result["attention_backend"] == "sdpa"
+    assert result["content_type"] == "image/png"
+    assert result["image_size_bytes"] == len(b"fake-PNG")
     assert storage.uploads[0][2] == "image/png"
     assert runner.requests[0][0].prompt == "A red biplane"
+    assert "image_base64" not in result
 
 
 def test_service_returns_clear_error_when_storage_is_missing(tmp_path):
@@ -63,7 +66,6 @@ def test_service_returns_clear_error_when_storage_is_missing(tmp_path):
         output_prefix="hidream-o1",
         model_id="HiDream-ai/HiDream-O1-Image",
         attention_backend="sdpa",
-        allow_base64_output=False,
     )
 
     result = service.handle_job({"id": "job-1", "input": {"prompt": "A red biplane"}})
@@ -72,7 +74,7 @@ def test_service_returns_clear_error_when_storage_is_missing(tmp_path):
     assert "S3" in result["error"]
 
 
-def test_service_supports_explicit_base64_fallback(tmp_path):
+def test_service_supports_direct_base64_output_without_storage(tmp_path):
     service = GenerationService(
         runner=FakeRunner(),
         storage=None,
@@ -80,10 +82,53 @@ def test_service_supports_explicit_base64_fallback(tmp_path):
         output_prefix="hidream-o1",
         model_id="HiDream-ai/HiDream-O1-Image",
         attention_backend="sdpa",
-        allow_base64_output=True,
+    )
+
+    result = service.handle_job(
+        {"id": "job-1", "input": {"prompt": "A red biplane", "output_delivery": "base64"}}
+    )
+
+    assert result["image_base64"]
+    assert result["content_type"] == "image/png"
+    assert result["image_size_bytes"] == len(b"fake-PNG")
+    assert result["output_delivery"] == "base64"
+    assert result["mode"] == "text_to_image"
+
+
+def test_service_supports_both_url_and_base64_outputs(tmp_path):
+    runner = FakeRunner()
+    storage = FakeStorage()
+    service = GenerationService(
+        runner=runner,
+        storage=storage,
+        work_dir=tmp_path,
+        output_prefix="hidream-o1",
+        model_id="HiDream-ai/HiDream-O1-Image",
+        attention_backend="sdpa",
+    )
+
+    result = service.handle_job(
+        {"id": "job-1", "input": {"prompt": "A red biplane", "output_delivery": "both"}}
+    )
+
+    assert result["image_url"].startswith("https://cdn.example.com/hidream-o1/job-1-")
+    assert result["image_base64"]
+    assert result["output_delivery"] == "both"
+    assert storage.uploads
+
+
+def test_service_env_default_can_make_direct_output_first_class(tmp_path):
+    service = GenerationService(
+        runner=FakeRunner(),
+        storage=None,
+        work_dir=tmp_path,
+        output_prefix="hidream-o1",
+        model_id="HiDream-ai/HiDream-O1-Image",
+        attention_backend="sdpa",
+        default_output_delivery="base64",
     )
 
     result = service.handle_job({"id": "job-1", "input": {"prompt": "A red biplane"}})
 
     assert result["image_base64"]
-    assert result["mode"] == "text_to_image"
+    assert result["output_delivery"] == "base64"
