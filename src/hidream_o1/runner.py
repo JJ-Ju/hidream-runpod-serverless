@@ -12,7 +12,7 @@ from hidream_o1.schemas import GenerationRequest
 
 DEFAULT_MODEL_ID = "HiDream-ai/HiDream-O1-Image"
 DEFAULT_HF_CACHE_ROOT = "/runpod-volume/huggingface-cache/hub"
-SUPPORTED_ATTENTION_BACKENDS = {"sdpa", "flash"}
+SUPPORTED_ATTENTION_BACKENDS = {"auto", "sdpa", "flash"}
 
 
 class HiDreamRunner:
@@ -28,7 +28,9 @@ class HiDreamRunner:
         self.hf_cache_root = Path(hf_cache_root)
         attention_backend = attention_backend.lower()
         if attention_backend not in SUPPORTED_ATTENTION_BACKENDS:
-            raise ValueError("ATTENTION_BACKEND must be one of: flash, sdpa")
+            raise ValueError("ATTENTION_BACKEND must be one of: auto, flash, sdpa")
+        if attention_backend == "auto":
+            attention_backend = "sdpa"
         self.attention_backend = attention_backend
         self.use_flash_attn = attention_backend == "flash"
         self._lock = threading.Lock()
