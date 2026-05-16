@@ -51,7 +51,9 @@ Response returns:
 - Outputs are uploaded through S3-compatible configuration and returned as URLs.
 - Missing object-storage configuration returns a clear error unless
   `ALLOW_BASE64_OUTPUT=1`.
-- Docker builds provide stable `sdpa` and experimental `flash` variants.
+- Docker builds provide stable `sdpa` and experimental `flash` variants. The
+  flash image bootstraps `flash-attn` at RunPod startup instead of compiling it
+  during GitHub Actions.
 - Tests cover validation, mode detection, cache resolution, storage URL behavior,
   output key generation, and handler delegation without requiring CUDA/model
   weights.

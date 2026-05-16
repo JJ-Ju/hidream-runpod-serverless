@@ -21,6 +21,8 @@ ghcr.io/jj-ju/hidream-runpod-serverless:<sha-or-release>-flash
 ```
 
 Use immutable `sha-*` or `vX.Y.Z-*` tags for RunPod production endpoints.
+The flash image bootstraps `flash-attn` at container startup with
+`BOOTSTRAP_FLASH_ATTN=1`, which can add several minutes to cold starts.
 
 ## Required RunPod Environment
 
@@ -40,6 +42,9 @@ Optional:
 S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
 ALLOW_BASE64_OUTPUT=1
 OUTPUT_PREFIX=hidream-o1
+BOOTSTRAP_FLASH_ATTN=1
+FLASH_ATTN_PACKAGE=flash-attn
+MAX_JOBS=4
 ```
 
 Reference images must be public image URLs or small base64/data URI payloads.

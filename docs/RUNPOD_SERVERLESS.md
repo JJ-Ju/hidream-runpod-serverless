@@ -18,6 +18,12 @@ Prefer immutable `sha-*` or `vX.Y.Z-*` tags for production endpoints. Use
 `latest` only for the default SDPA channel and `flash` only for experimental
 flash-attn testing.
 
+The flash image does not compile `flash-attn` during GitHub Actions because the
+Docker build runner has no RunPod GPU attached. Instead it uses a CUDA devel
+base and bootstraps `flash-attn` at container startup when
+`BOOTSTRAP_FLASH_ATTN=1`. This can add several minutes to each cold start and
+should be tested before production use.
+
 ## RunPod Endpoint Settings
 
 - Endpoint type: Queue.
@@ -48,6 +54,9 @@ HIDREAM_MODEL_PATH=/explicit/local/model/path
 S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
 ALLOW_BASE64_OUTPUT=1
 OUTPUT_PREFIX=hidream-o1
+BOOTSTRAP_FLASH_ATTN=1
+FLASH_ATTN_PACKAGE=flash-attn
+MAX_JOBS=4
 ```
 
 `HIDREAM_MODEL_PATH` bypasses cache resolution. `S3_PUBLIC_BASE_URL` returns

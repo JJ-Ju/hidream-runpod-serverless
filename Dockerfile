@@ -2,7 +2,11 @@ ARG BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
 FROM ${BASE_IMAGE}
 
 ARG ATTENTION_BACKEND=sdpa
+ARG BOOTSTRAP_FLASH_ATTN=0
 ENV ATTENTION_BACKEND=${ATTENTION_BACKEND}
+ENV BOOTSTRAP_FLASH_ATTN=${BOOTSTRAP_FLASH_ATTN}
+ENV FLASH_ATTN_PACKAGE=flash-attn
+ENV MAX_JOBS=4
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/app/src:/app
@@ -24,18 +28,17 @@ ENV PATH=/opt/venv/bin:${PATH}
 
 COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir -r /app/requirements.txt \
-    && if [ "${ATTENTION_BACKEND}" = "flash" ]; then \
-        python -m pip install --no-cache-dir packaging ninja \
-        && python -m pip install --no-cache-dir --no-build-isolation flash-attn; \
-    fi
+    && python -m pip install --no-cache-dir -r /app/requirements.txt
 
 COPY pyproject.toml /app/pyproject.toml
 COPY handler.py /app/handler.py
 COPY src /app/src
+COPY scripts /app/scripts
+RUN chmod +x /app/scripts/entrypoint.sh
 
 LABEL org.opencontainers.image.source="https://github.com/JJ-Ju/hidream-runpod-serverless"
 LABEL org.opencontainers.image.description="RunPod Serverless worker for HiDream O1 image generation"
 LABEL org.opencontainers.image.licenses="MIT"
 
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 CMD ["python", "-u", "/app/handler.py"]

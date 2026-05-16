@@ -46,10 +46,12 @@ jobs:
           - variant: sdpa
             channel_tag: latest
             attention_backend: sdpa
+            bootstrap_flash_attn: 0
             base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
           - variant: flash
             channel_tag: flash
             attention_backend: flash
+            bootstrap_flash_attn: 1
             base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-devel
     steps:
       - name: Checkout
@@ -87,6 +89,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           build-args: |
             ATTENTION_BACKEND=${{ matrix.attention_backend }}
+            BOOTSTRAP_FLASH_ATTN=${{ matrix.bootstrap_flash_attn }}
             BASE_IMAGE=${{ matrix.base_image }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
