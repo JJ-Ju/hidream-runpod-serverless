@@ -3,8 +3,8 @@
 RunPod Serverless worker for
 [`HiDream-ai/HiDream-O1-Image`](https://huggingface.co/HiDream-ai/HiDream-O1-Image).
 The worker uses cached Hugging Face model weights on RunPod, generates images
-through the upstream HiDream inference code, uploads outputs to S3-compatible
-object storage, and returns image URLs.
+through the upstream HiDream inference code, and returns direct base64 image
+bytes, S3-compatible object URLs, or both.
 
 ## Images
 
@@ -55,9 +55,9 @@ cache under `/tmp/hidream-runtime`.
    HiDream-ai/HiDream-O1-Image
    ```
 
-5. Set the required environment variables from the section below, especially the
-   S3-compatible output storage variables. The worker returns URLs, not large
-   inline image payloads, unless `ALLOW_BASE64_OUTPUT=1` is set.
+5. Set the required environment variables from the section below. S3-compatible
+   storage is only required when jobs request `output_delivery=url` or
+   `output_delivery=both`.
 
 6. Submit jobs to the RunPod endpoint with JSON shaped like:
 
@@ -68,7 +68,8 @@ cache under `/tmp/hidream-runtime`.
        "width": 2048,
        "height": 2048,
        "seed": 32,
-       "output_format": "png"
+       "output_format": "png",
+       "output_delivery": "base64"
      }
    }
    ```
@@ -83,6 +84,11 @@ cache under `/tmp/hidream-runtime`.
 ```text
 HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
 HIDREAM_HF_CACHE_ROOT=/runpod-volume/huggingface-cache/hub
+```
+
+Required for URL outputs:
+
+```text
 S3_ENDPOINT_URL=https://<s3-compatible-endpoint>
 S3_REGION=auto
 S3_BUCKET=<bucket-name>
@@ -94,7 +100,7 @@ Optional:
 
 ```text
 S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
-ALLOW_BASE64_OUTPUT=1
+DEFAULT_OUTPUT_DELIVERY=base64
 OUTPUT_PREFIX=hidream-o1
 BOOTSTRAP_FLASH_ATTN=1
 HIDREAM_BOOTSTRAP_DEPS=1
@@ -107,6 +113,20 @@ ATTENTION_BACKEND=auto
 
 Reference images must be public image URLs or small base64/data URI payloads.
 Local file paths and private-network URLs are rejected.
+
+## Output Delivery
+
+Each job can choose how the generated image is returned:
+
+- `output_delivery=url`: upload to S3-compatible storage and return `image_url`,
+  `bucket`, and `key`.
+- `output_delivery=base64`: return `image_base64`, `content_type`, and
+  `image_size_bytes` directly in the RunPod response.
+- `output_delivery=both`: return both the uploaded URL metadata and direct
+  base64 bytes.
+
+Set `DEFAULT_OUTPUT_DELIVERY=base64` on the endpoint to make direct outputs the
+default for pipeline workflows. Per-job `output_delivery` overrides that default.
 
 ## Ports
 

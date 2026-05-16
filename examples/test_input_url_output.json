@@ -1,0 +1,10 @@
+{
+  "input": {
+    "prompt": "A clean orthographic product view of a stylized sci-fi helmet",
+    "width": 2048,
+    "height": 2048,
+    "seed": 32,
+    "output_format": "png",
+    "output_delivery": "url"
+  }
+}

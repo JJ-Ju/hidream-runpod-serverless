@@ -57,6 +57,11 @@ Required:
 ```text
 HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
 HIDREAM_HF_CACHE_ROOT=/runpod-volume/huggingface-cache/hub
+```
+
+Required for `output_delivery=url` or `output_delivery=both`:
+
+```text
 S3_ENDPOINT_URL=https://<s3-compatible-endpoint>
 S3_REGION=auto
 S3_BUCKET=<bucket-name>
@@ -69,7 +74,7 @@ Optional:
 ```text
 HIDREAM_MODEL_PATH=/explicit/local/model/path
 S3_PUBLIC_BASE_URL=https://<public-bucket-or-cdn-base-url>
-ALLOW_BASE64_OUTPUT=1
+DEFAULT_OUTPUT_DELIVERY=base64
 OUTPUT_PREFIX=hidream-o1
 HIDREAM_BOOTSTRAP_DEPS=1
 HIDREAM_DEPENDENCY_FALLBACK_ROOT=/tmp/hidream-runtime
@@ -87,6 +92,20 @@ auto-selected persistent/ephemeral dependency cache path. `S3_PUBLIC_BASE_URL`
 returns deterministic public object URLs; without it, the worker creates
 presigned URLs.
 
+## Output Delivery
+
+`output_delivery` is a first-class job input:
+
+- `url`: upload the generated image to S3-compatible storage and return
+  `image_url`, `bucket`, and `key`.
+- `base64`: return `image_base64`, `content_type`, and `image_size_bytes`
+  directly in the RunPod response. This does not require S3 configuration.
+- `both`: upload to S3-compatible storage and also return direct base64 bytes.
+
+Set `DEFAULT_OUTPUT_DELIVERY=base64` on the endpoint when the worker feeds a
+downstream pipeline, such as 3D model generation. Individual jobs can still
+override the default with their own `output_delivery` value.
+
 ## Example Text-To-Image Job
 
 ```json
@@ -96,7 +115,20 @@ presigned URLs.
     "width": 2048,
     "height": 2048,
     "seed": 32,
-    "output_format": "png"
+    "output_format": "png",
+    "output_delivery": "base64"
+  }
+}
+```
+
+## Example URL Output Job
+
+```json
+{
+  "input": {
+    "prompt": "A clean orthographic product view of a stylized sci-fi helmet",
+    "output_format": "png",
+    "output_delivery": "url"
   }
 }
 ```
@@ -156,8 +188,8 @@ The layout box order follows upstream HiDream: `[x1, x2, y1, y2]`.
 ## Manual GPU Smoke Test
 
 1. Deploy the dynamic image with cached `HiDream-ai/HiDream-O1-Image` configured.
-2. Submit the text-to-image example and confirm `image_url`, dimensions, seed,
-   mode, model ID, and attention backend are returned.
+2. Submit the text-to-image example and confirm `image_base64`, content type,
+   dimensions, seed, mode, model ID, and attention backend are returned.
 3. Submit the edit example and confirm a single reference image is downloaded
    and `mode` is `edit`.
 4. Submit the multi-reference example and confirm `mode` is `reference`.

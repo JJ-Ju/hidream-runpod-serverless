@@ -12,6 +12,7 @@ def test_request_defaults_to_full_text_to_image():
     assert request.seed == 32
     assert request.model_type == "full"
     assert request.output_format == "png"
+    assert request.output_delivery == "url"
     assert request.mode == GenerationMode.TEXT_TO_IMAGE
 
 
@@ -44,6 +45,21 @@ def test_request_rejects_invalid_prompt_and_format():
 
     with pytest.raises(RequestValidationError, match="output_format"):
         GenerationRequest.from_input({"prompt": "x", "output_format": "tiff"})
+
+    with pytest.raises(RequestValidationError, match="output_delivery"):
+        GenerationRequest.from_input({"prompt": "x", "output_delivery": "disk"})
+
+
+def test_request_accepts_direct_output_delivery_modes():
+    base64_request = GenerationRequest.from_input(
+        {"prompt": "x", "output_delivery": "base64"}
+    )
+    both_request = GenerationRequest.from_input(
+        {"prompt": "x", "output_delivery": "both"}
+    )
+
+    assert base64_request.output_delivery == "base64"
+    assert both_request.output_delivery == "both"
 
 
 def test_request_rejects_bad_reference_images():
