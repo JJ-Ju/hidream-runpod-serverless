@@ -11,6 +11,12 @@ def test_dockerfile_bootstraps_flash_at_runtime_not_build_time():
     assert "ENTRYPOINT" in dockerfile
     assert "BOOTSTRAP_FLASH_ATTN" in dockerfile
     assert "ATTENTION_BACKEND=auto" in dockerfile
+    assert "pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime" in dockerfile
+    assert "nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04" not in dockerfile
+    assert "PYTHON_VERSION=3.12" in dockerfile
+    assert "TORCH_VERSION=2.10.0" in dockerfile
+    assert "TORCHVISION_VERSION=0.25.0" in dockerfile
+    assert "python -m hidream_o1.dependency_bootstrap" in entrypoint
     assert "pip install --no-cache-dir --no-build-isolation flash-attn" not in dockerfile
     assert "python -m hidream_o1.flash_bootstrap" in entrypoint
     assert "--write-env" in entrypoint
@@ -23,3 +29,5 @@ def test_github_workflow_enables_flash_bootstrap_for_flash_variant():
 
     assert "bootstrap_flash_attn: 1" in workflow
     assert "BOOTSTRAP_FLASH_ATTN=${{ matrix.bootstrap_flash_attn }}" in workflow
+    assert "pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime" in workflow
+    assert "nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04" not in workflow

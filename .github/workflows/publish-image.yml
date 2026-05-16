@@ -47,12 +47,12 @@ jobs:
             channel_tag: latest
             attention_backend: sdpa
             bootstrap_flash_attn: 0
-            base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
+            base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime@sha256:b85566342b86d13a67712e9315d40cdc2dad7f8d86df1aff3831f80835edbcca
           - variant: flash
             channel_tag: flash
             attention_backend: auto
             bootstrap_flash_attn: 1
-            base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
+            base_image: pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime@sha256:b85566342b86d13a67712e9315d40cdc2dad7f8d86df1aff3831f80835edbcca
     steps:
       - name: Checkout
         uses: actions/checkout@v4

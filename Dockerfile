@@ -1,36 +1,32 @@
-ARG BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
+ARG BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime@sha256:b85566342b86d13a67712e9315d40cdc2dad7f8d86df1aff3831f80835edbcca
 FROM ${BASE_IMAGE}
 
+ARG PYTHON_VERSION=3.12
+ARG CUDA_VERSION=12.8
+ARG TORCH_VERSION=2.10.0
+ARG TORCHVISION_VERSION=0.25.0
 ARG ATTENTION_BACKEND=auto
 ARG BOOTSTRAP_FLASH_ATTN=0
+ENV HIDREAM_PYTHON_VERSION=${PYTHON_VERSION}
+ENV HIDREAM_CUDA_VERSION=${CUDA_VERSION}
+ENV HIDREAM_TORCH_VERSION=${TORCH_VERSION}
+ENV HIDREAM_TORCHVISION_VERSION=${TORCHVISION_VERSION}
 ENV ATTENTION_BACKEND=${ATTENTION_BACKEND}
 ENV BOOTSTRAP_FLASH_ATTN=${BOOTSTRAP_FLASH_ATTN}
+ENV HIDREAM_BOOTSTRAP_DEPS=1
+ENV HIDREAM_VOLUME_ROOT=/runpod-volume
+ENV HIDREAM_DEPENDENCY_FALLBACK_ROOT=/tmp/hidream-runtime
 ENV FLASH_ATTN_FALLBACK_BACKEND=sdpa
 ENV FLASH_ATTN_PACKAGE=flash-attn
-ENV FLASH_ATTN_CACHE_DIR=/runpod-volume/flash-attn-cache
 ENV MAX_JOBS=4
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/app/src:/app
 ENV HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
-ENV HIDREAM_HF_CACHE_ROOT=/runpod-volume/huggingface-cache/hub
 ENV OUTPUT_PREFIX=hidream-o1
 
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        git \
-        python3-venv \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN python -m venv --system-site-packages /opt/venv
-ENV PATH=/opt/venv/bin:${PATH}
-
 COPY requirements.txt /app/requirements.txt
-RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir -r /app/requirements.txt
 
 COPY pyproject.toml /app/pyproject.toml
 COPY handler.py /app/handler.py
