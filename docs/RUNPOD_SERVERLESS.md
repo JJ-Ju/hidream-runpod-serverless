@@ -310,6 +310,13 @@ and reference payloads larger than 20 MB.
 
 The layout box order follows upstream HiDream: `[x1, x2, y1, y2]`.
 
+## GUI And Pipeline Clients
+
+For GUI app integration, use [`CLIENT_API.md`](CLIENT_API.md). It includes the
+RunPod API envelope, sync and async request patterns, TypeScript request and
+response types, direct image payload conversion helpers, response rendering, and
+common error handling.
+
 ## Manual GPU Smoke Test
 
 1. Deploy the dynamic image with cached `HiDream-ai/HiDream-O1-Image` configured.
