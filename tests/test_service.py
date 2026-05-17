@@ -29,6 +29,11 @@ class FakeStorage:
         )
 
 
+class FailingRunner:
+    def generate(self, request, ref_image_paths):
+        raise RuntimeError("Cached model not found: HiDream-ai/HiDream-O1-Image")
+
+
 def test_service_generates_uploads_and_returns_metadata(tmp_path):
     runner = FakeRunner()
     storage = FakeStorage()
@@ -132,3 +137,19 @@ def test_service_env_default_can_make_direct_output_first_class(tmp_path):
 
     assert result["image_base64"]
     assert result["output_delivery"] == "base64"
+
+
+def test_service_returns_runtime_errors_as_worker_errors(tmp_path):
+    service = GenerationService(
+        runner=FailingRunner(),
+        storage=None,
+        work_dir=tmp_path,
+        output_prefix="hidream-o1",
+        model_id="HiDream-ai/HiDream-O1-Image",
+        attention_backend="sdpa",
+        default_output_delivery="base64",
+    )
+
+    result = service.handle_job({"id": "job-1", "input": {"prompt": "A red biplane"}})
+
+    assert result == {"error": "Cached model not found: HiDream-ai/HiDream-O1-Image"}

@@ -4,6 +4,7 @@ from hidream_o1.flash_bootstrap import (
     FlashRuntime,
     choose_attention_backend,
     cached_wheel,
+    cuda_toolkit_available,
     write_env_file,
     safe_package_name,
 )
@@ -115,6 +116,17 @@ def test_auto_backend_falls_back_when_build_fails(tmp_path):
 
     assert result.backend == "sdpa"
     assert "compile failed" in result.reason
+
+
+def test_cuda_toolkit_available_requires_cuda_home_and_nvcc(tmp_path):
+    cuda_home = tmp_path / "cuda"
+    (cuda_home / "bin").mkdir(parents=True)
+
+    assert not cuda_toolkit_available({"CUDA_HOME": str(cuda_home)})
+
+    (cuda_home / "bin" / "nvcc").write_text("#!/bin/sh\n", encoding="utf-8")
+
+    assert cuda_toolkit_available({"CUDA_HOME": str(cuda_home)})
 
 
 def test_auto_backend_uses_configured_fallback_when_build_fails(tmp_path):

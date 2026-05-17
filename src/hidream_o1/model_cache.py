@@ -29,4 +29,24 @@ def resolve_model_path(model_id: str, cache_root: str | Path, explicit_path: str
         if snapshots:
             return snapshots[0]
 
-    raise RuntimeError(f"Cached model not found: {model_id} under {cache_root}")
+    expected = model_root / "snapshots" / "<snapshot-hash>"
+    visible = _visible_cache_entries(Path(cache_root))
+    raise RuntimeError(
+        f"Cached model not found: {model_id} under {cache_root}. "
+        f"Expected a Hugging Face cache snapshot at {expected}. "
+        "In RunPod, set the endpoint Model field to HiDream-ai/HiDream-O1-Image "
+        "and wait for the cached model to be prepared, or set HIDREAM_MODEL_PATH "
+        "to the exact local snapshot/model directory. "
+        f"Visible cache entries: {visible}"
+    )
+
+
+def _visible_cache_entries(cache_root: Path, limit: int = 8) -> str:
+    if not cache_root.exists():
+        return "<cache root does not exist>"
+    if not cache_root.is_dir():
+        return "<cache root is not a directory>"
+    entries = sorted(path.name for path in cache_root.iterdir())[:limit]
+    if not entries:
+        return "<empty>"
+    return ", ".join(entries)

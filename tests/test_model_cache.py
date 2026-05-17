@@ -30,5 +30,13 @@ def test_resolve_model_path_falls_back_to_first_snapshot(tmp_path):
 
 
 def test_resolve_model_path_errors_when_missing(tmp_path):
-    with pytest.raises(RuntimeError, match="Cached model not found"):
+    with pytest.raises(RuntimeError, match="HIDREAM_MODEL_PATH"):
         resolve_model_path("HiDream-ai/HiDream-O1-Image", tmp_path / "hub", None)
+
+
+def test_resolve_model_path_error_lists_visible_cache_entries(tmp_path):
+    cache_root = tmp_path / "hub"
+    (cache_root / "models--Other--Model").mkdir(parents=True)
+
+    with pytest.raises(RuntimeError, match="models--Other--Model"):
+        resolve_model_path("HiDream-ai/HiDream-O1-Image", cache_root, None)
