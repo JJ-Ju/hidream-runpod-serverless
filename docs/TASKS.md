@@ -71,6 +71,8 @@
   use cached wheels or SDPA instead.
 - [x] Improve missing model-cache errors and document the expected RunPod
   Hugging Face cache path.
+- [x] Make model-cache resolution robust across HF URLs, direct snapshot paths,
+  case variations, and alternate Hugging Face cache env roots.
 - [x] Export Hugging Face, pip, Torch, and flash-attn caches onto the network
   volume when present.
 - [x] Document first-start behavior, cache invalidation, and the ephemeral

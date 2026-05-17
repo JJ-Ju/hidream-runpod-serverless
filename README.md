@@ -61,11 +61,13 @@ cache under `/tmp/hidream-runtime`.
    /runpod-volume/huggingface-cache/hub/models--HiDream-ai--HiDream-O1-Image/snapshots/<snapshot-hash>
    ```
 
-   If the worker reports `Cached model not found`, the endpoint Model field has
-   not prepared this model on the selected worker host, or `HIDREAM_HF_CACHE_ROOT`
-   points at the wrong location. Keep the endpoint Model field set to
-   `HiDream-ai/HiDream-O1-Image`, or set `HIDREAM_MODEL_PATH` to the exact local
-   snapshot/model directory.
+   The worker accepts either `HiDream-ai/HiDream-O1-Image` or
+   `https://huggingface.co/HiDream-ai/HiDream-O1-Image` as `HIDREAM_MODEL_ID`
+   and searches the configured cache root plus common Hugging Face cache env
+   roots. If the worker reports `Cached model not found`, the endpoint Model
+   field has not prepared this model on the selected worker host, the cache root
+   is different from the worker's environment, or `HIDREAM_MODEL_PATH` needs to
+   point to the exact local snapshot/model directory.
 
 5. Set the required environment variables from the section below. S3-compatible
    storage is only required when jobs request `output_delivery=url` or

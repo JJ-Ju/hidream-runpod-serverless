@@ -56,11 +56,14 @@ The cached model must be visible inside the worker at:
 /runpod-volume/huggingface-cache/hub/models--HiDream-ai--HiDream-O1-Image/snapshots/<snapshot-hash>
 ```
 
+The worker accepts either `HiDream-ai/HiDream-O1-Image` or
+`https://huggingface.co/HiDream-ai/HiDream-O1-Image` as `HIDREAM_MODEL_ID`. It
+searches the configured cache root, `HIDREAM_HF_CACHE_ROOT`, `HF_HUB_CACHE`,
+`TRANSFORMERS_CACHE`, `HF_HOME/hub`, and common RunPod Hugging Face cache roots.
 If a job returns `Cached model not found`, the endpoint Model field has not
-prepared `HiDream-ai/HiDream-O1-Image` on the selected worker host, or
-`HIDREAM_HF_CACHE_ROOT` points to the wrong cache root. Keep the RunPod Model
-field set to `HiDream-ai/HiDream-O1-Image`, wait for RunPod to prepare the cache,
-or set `HIDREAM_MODEL_PATH` to the exact local snapshot/model directory.
+prepared the model on the selected worker host, the cache root is different from
+the worker's environment, or `HIDREAM_MODEL_PATH` needs to point to the exact
+local snapshot/model directory.
 
 ## Environment Variables
 

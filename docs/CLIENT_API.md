@@ -377,8 +377,9 @@ Recommended GUI states:
   variables. Use `output_delivery=base64` or configure S3.
 - `Cached model not found`: the RunPod endpoint Model field has not prepared
   `HiDream-ai/HiDream-O1-Image` at
-  `/runpod-volume/huggingface-cache/hub`, or `HIDREAM_MODEL_PATH` points to the
-  wrong local directory.
+  `/runpod-volume/huggingface-cache/hub`, the cache root differs from the
+  worker's environment, or `HIDREAM_MODEL_PATH` points to the wrong local
+  directory.
 - `prompt must be a non-empty string`: GUI submitted an empty prompt.
 - `width must be no greater than 2048` or `height must be no greater than
   2048`: clamp GUI controls to 2048.
