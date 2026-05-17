@@ -1,6 +1,7 @@
 ARG BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime@sha256:b85566342b86d13a67712e9315d40cdc2dad7f8d86df1aff3831f80835edbcca
 FROM ${BASE_IMAGE}
 
+ENV DEBIAN_FRONTEND=noninteractive
 ARG PYTHON_VERSION=3.12
 ARG CUDA_VERSION=12.8
 ARG TORCH_VERSION=2.10.0
@@ -24,6 +25,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/app/src:/app
 ENV HIDREAM_MODEL_ID=HiDream-ai/HiDream-O1-Image
 ENV OUTPUT_PREFIX=hidream-o1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3.12-venv \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY requirements.txt /app/requirements.txt

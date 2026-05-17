@@ -17,6 +17,8 @@ def test_dockerfile_bootstraps_flash_at_runtime_not_build_time():
     assert "PYTHON_VERSION=3.12" in dockerfile
     assert "TORCH_VERSION=2.10.0" in dockerfile
     assert "TORCHVISION_VERSION=0.25.0" in dockerfile
+    assert "python3.12-venv" in dockerfile
+    assert "rm -rf /var/lib/apt/lists/*" in dockerfile
     assert "python -m hidream_o1.dependency_bootstrap" in entrypoint
     assert "pip install --no-cache-dir --no-build-isolation flash-attn" not in dockerfile
     assert "python -m hidream_o1.flash_bootstrap" in entrypoint
