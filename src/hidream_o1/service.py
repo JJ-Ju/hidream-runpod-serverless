@@ -103,7 +103,7 @@ class GenerationService:
             return response
         except RequestValidationError as exc:
             return {"error": str(exc)}
-        except ValueError as exc:
+        except (RuntimeError, ValueError) as exc:
             return {"error": str(exc)}
 
 

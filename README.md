@@ -55,6 +55,20 @@ cache under `/tmp/hidream-runtime`.
    HiDream-ai/HiDream-O1-Image
    ```
 
+   The cached model must appear inside the worker at:
+
+   ```text
+   /runpod-volume/huggingface-cache/hub/models--HiDream-ai--HiDream-O1-Image/snapshots/<snapshot-hash>
+   ```
+
+   The worker accepts either `HiDream-ai/HiDream-O1-Image` or
+   `https://huggingface.co/HiDream-ai/HiDream-O1-Image` as `HIDREAM_MODEL_ID`
+   and searches the configured cache root plus common Hugging Face cache env
+   roots. If the worker reports `Cached model not found`, the endpoint Model
+   field has not prepared this model on the selected worker host, the cache root
+   is different from the worker's environment, or `HIDREAM_MODEL_PATH` needs to
+   point to the exact local snapshot/model directory.
+
 5. Set the required environment variables from the section below. S3-compatible
    storage is only required when jobs request `output_delivery=url` or
    `output_delivery=both`.
@@ -241,6 +255,12 @@ Reference images can be direct base64/data URI payloads or public/presigned
 URLs. Direct payload objects are preferred for pipeline input:
 `{"base64": "...", "mime_type": "image/png"}`. Local file paths and
 private-network URLs are rejected.
+
+The official PyTorch runtime image does not include the CUDA compiler toolchain.
+With `ATTENTION_BACKEND=auto`, the worker uses a cached flash-attn wheel if one
+is already present under `FLASH_ATTN_CACHE_DIR`; otherwise it starts with SDPA.
+To build flash-attn wheels, use a CUDA devel Pod attached to the same network
+volume, or leave the endpoint on SDPA.
 
 ## Output Delivery
 

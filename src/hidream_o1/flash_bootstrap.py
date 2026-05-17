@@ -113,6 +113,13 @@ def install_wheel(wheel: Path) -> None:
 
 
 def build_and_cache_wheel(runtime: FlashRuntime) -> Path:
+    if not cuda_toolkit_available():
+        raise RuntimeError(
+            "CUDA_HOME/CUDA_PATH is not set or does not point to a CUDA toolkit; "
+            "cannot build flash-attn from source in this runtime image. Seed a "
+            "cached wheel from a CUDA devel Pod or use ATTENTION_BACKEND=sdpa."
+        )
+
     runtime.cache_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="flash-attn-wheel-") as tmp:
         wheel_dir = Path(tmp)
@@ -140,6 +147,15 @@ def build_and_cache_wheel(runtime: FlashRuntime) -> Path:
         destination = runtime.cache_dir / wheels[0].name
         shutil.copy2(wheels[0], destination)
         return destination
+
+
+def cuda_toolkit_available(env: dict[str, str] | None = None) -> bool:
+    env = env or os.environ
+    cuda_home = env.get("CUDA_HOME") or env.get("CUDA_PATH")
+    if not cuda_home:
+        return False
+    cuda_home_path = Path(cuda_home)
+    return cuda_home_path.is_dir() and (cuda_home_path / "bin" / "nvcc").is_file()
 
 
 def choose_attention_backend(

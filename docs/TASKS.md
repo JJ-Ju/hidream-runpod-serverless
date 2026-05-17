@@ -67,6 +67,12 @@
   in the dependency environment cache key.
 - [x] Add startup locking so concurrent workers do not build the same virtual
   environment at the same time.
+- [x] Skip flash-attn source builds on runtime images without a CUDA toolkit and
+  use cached wheels or SDPA instead.
+- [x] Improve missing model-cache errors and document the expected RunPod
+  Hugging Face cache path.
+- [x] Make model-cache resolution robust across HF URLs, direct snapshot paths,
+  case variations, and alternate Hugging Face cache env roots.
 - [x] Export Hugging Face, pip, Torch, and flash-attn caches onto the network
   volume when present.
 - [x] Document first-start behavior, cache invalidation, and the ephemeral

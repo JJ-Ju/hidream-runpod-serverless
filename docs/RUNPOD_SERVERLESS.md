@@ -50,6 +50,21 @@ install the cached wheel without carrying a devel image.
 - Timeout: start high enough for 2048px generation and tune after GPU smoke
   testing.
 
+The cached model must be visible inside the worker at:
+
+```text
+/runpod-volume/huggingface-cache/hub/models--HiDream-ai--HiDream-O1-Image/snapshots/<snapshot-hash>
+```
+
+The worker accepts either `HiDream-ai/HiDream-O1-Image` or
+`https://huggingface.co/HiDream-ai/HiDream-O1-Image` as `HIDREAM_MODEL_ID`. It
+searches the configured cache root, `HIDREAM_HF_CACHE_ROOT`, `HF_HUB_CACHE`,
+`TRANSFORMERS_CACHE`, `HF_HOME/hub`, and common RunPod Hugging Face cache roots.
+If a job returns `Cached model not found`, the endpoint Model field has not
+prepared the model on the selected worker host, the cache root is different from
+the worker's environment, or `HIDREAM_MODEL_PATH` needs to point to the exact
+local snapshot/model directory.
+
 ## Environment Variables
 
 Use one of these complete profiles in the RunPod environment variable editor.
@@ -183,6 +198,14 @@ ATTENTION_BACKEND=auto
 auto-selected persistent/ephemeral dependency cache path. `S3_PUBLIC_BASE_URL`
 returns deterministic public object URLs; without it, the worker creates
 presigned URLs.
+
+The official PyTorch runtime image does not include the CUDA compiler toolchain.
+With `ATTENTION_BACKEND=auto`, the worker will use flash-attn only when it is
+already importable or when a matching cached wheel exists under
+`FLASH_ATTN_CACHE_DIR`. If no cached wheel exists and `CUDA_HOME`/`CUDA_PATH`
+does not point to a CUDA toolkit with `nvcc`, the worker skips source builds and
+uses SDPA. To create a flash-attn wheel cache, build it once from a CUDA devel
+Pod attached to the same network volume.
 
 ## Output Delivery
 

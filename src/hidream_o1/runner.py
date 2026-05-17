@@ -6,7 +6,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from hidream_o1.model_cache import resolve_model_path
+from hidream_o1.model_cache import normalize_model_id, resolve_model_path
 from hidream_o1.schemas import GenerationRequest
 
 
@@ -23,7 +23,7 @@ class HiDreamRunner:
         hf_cache_root: str | Path = DEFAULT_HF_CACHE_ROOT,
         attention_backend: str = "sdpa",
     ):
-        self.model_id = model_id
+        self.model_id = normalize_model_id(model_id)
         self.model_path = Path(model_path) if model_path else None
         self.hf_cache_root = Path(hf_cache_root)
         attention_backend = attention_backend.lower()
