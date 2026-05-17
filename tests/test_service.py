@@ -11,8 +11,11 @@ class FakeRunner:
     def __init__(self):
         self.requests = []
 
-    def generate(self, request, ref_image_paths):
-        self.requests.append((request, ref_image_paths))
+    def generate(self, request, ref_image_paths, progress_callback=None):
+        self.requests.append((request, ref_image_paths, progress_callback))
+        if progress_callback:
+            progress_callback(0, 2)
+            progress_callback(1, 2)
         return FakeImage()
 
 
@@ -30,7 +33,7 @@ class FakeStorage:
 
 
 class FailingRunner:
-    def generate(self, request, ref_image_paths):
+    def generate(self, request, ref_image_paths, progress_callback=None):
         raise RuntimeError("Cached model not found: HiDream-ai/HiDream-O1-Image")
 
 
@@ -153,3 +156,31 @@ def test_service_returns_runtime_errors_as_worker_errors(tmp_path):
     result = service.handle_job({"id": "job-1", "input": {"prompt": "A red biplane"}})
 
     assert result == {"error": "Cached model not found: HiDream-ai/HiDream-O1-Image"}
+
+
+def test_service_emits_progress_updates(tmp_path):
+    progress_events = []
+    service = GenerationService(
+        runner=FakeRunner(),
+        storage=None,
+        work_dir=tmp_path,
+        output_prefix="hidream-o1",
+        model_id="HiDream-ai/HiDream-O1-Image",
+        attention_backend="sdpa",
+        default_output_delivery="base64",
+    )
+
+    result = service.handle_job(
+        {"id": "job-1", "input": {"prompt": "A red biplane"}},
+        progress_callback=progress_events.append,
+    )
+
+    assert result["image_base64"]
+    stages = [event["stage"] for event in progress_events]
+    assert stages[:3] == ["validating", "preparing_inputs", "loading_model"]
+    assert "generating" in stages
+    assert stages[-1] == "complete"
+    generating = [event for event in progress_events if event["stage"] == "generating"]
+    assert generating[-1]["step"] == 2
+    assert generating[-1]["total_steps"] == 2
+    assert generating[-1]["eta_seconds"] == 0.0

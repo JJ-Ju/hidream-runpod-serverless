@@ -58,7 +58,7 @@ class HiDreamRunner:
             )
         return self._resolved_model_path
 
-    def generate(self, request: GenerationRequest, ref_image_paths: list[str]):
+    def generate(self, request: GenerationRequest, ref_image_paths: list[str], progress_callback=None):
         processor, model = self._load()
         kwargs = request.generation_kwargs()
         if kwargs.get("timesteps_list") == "DEFAULT_TIMESTEPS":
@@ -82,6 +82,7 @@ class HiDreamRunner:
             seed=request.seed,
             keep_original_aspect=request.keep_original_aspect,
             layout_bboxes=layout_bboxes,
+            callback=progress_callback,
             use_flash_attn=self.use_flash_attn,
             **kwargs,
         )

@@ -25,6 +25,8 @@
   direct input/S3 output.
 - [x] Add GUI/client API guide with RunPod envelopes, TypeScript contracts,
   direct image helpers, async polling, and error handling.
+- [x] Add RunPod progress updates with lifecycle stages, percentage, denoising
+  step counts, and approximate generation ETA for GUI polling.
 - [x] Add thin RunPod `handler.py` entrypoint.
 
 ## Workstream C: Upstream HiDream Integration

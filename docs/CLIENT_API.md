@@ -265,11 +265,30 @@ type HiDreamOutput = HiDreamOutputBase & {
 interface RunPodResponse<T> {
   id: string;
   status: "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED" | string;
-  output?: T;
+  output?: T | string;
   error?: string;
   delayTime?: number;
   executionTime?: number;
   workerId?: string;
+}
+
+interface HiDreamProgress {
+  stage:
+    | "validating"
+    | "preparing_inputs"
+    | "loading_model"
+    | "generating"
+    | "encoding_output"
+    | "uploading_output"
+    | "preparing_response"
+    | "complete"
+    | "failed";
+  percent: number;
+  message: string;
+  elapsed_seconds: number;
+  step?: number;
+  total_steps?: number;
+  eta_seconds?: number;
 }
 ```
 
@@ -360,6 +379,31 @@ Use `/run` when generation may take longer than your frontend timeout. The
 initial response returns a job ID. Store that ID in UI state, poll `/status`, and
 show progress states based on `status`.
 
+While a job is `IN_PROGRESS`, the worker sends progress updates through
+`runpod.serverless.progress_update(...)`. RunPod exposes the latest progress
+update in the status response. The worker sends progress as a JSON string, so a
+GUI should parse `response.output` when status is `IN_PROGRESS`.
+
+Progress stages:
+
+- `validating`: request schema and output mode are being checked.
+- `preparing_inputs`: direct/base64/reference images are being decoded or
+  downloaded.
+- `loading_model`: the singleton model and processor are loading or being
+  reused.
+- `generating`: denoising is running. Includes `step`, `total_steps`, and
+  `eta_seconds`.
+- `encoding_output`: the generated PIL image is being encoded.
+- `uploading_output`: S3-compatible upload is in progress.
+- `preparing_response`: direct base64 response is being assembled.
+- `complete`: worker output is ready.
+- `failed`: worker returned an error.
+
+The ETA is generation-step based. It becomes meaningful after generation starts;
+queue wait time before a worker starts is not predictable from inside the
+worker. Use RunPod's `delayTime`, endpoint health, and your own recent job
+history for queue-level estimates.
+
 Recommended GUI states:
 
 - `idle`: no request in flight.
@@ -369,6 +413,37 @@ Recommended GUI states:
 - `complete`: status is `COMPLETED` and `output` contains image data or URL.
 - `failed`: HTTP error, RunPod `error`, or worker `output.error`.
 - `cancelled`: user cancelled the job or RunPod returned `CANCELLED`.
+
+```ts
+function parseProgress(output: unknown): HiDreamProgress | undefined {
+  if (typeof output !== "string") {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(output);
+    if (typeof parsed?.stage === "string" && typeof parsed?.percent === "number") {
+      return parsed as HiDreamProgress;
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+async function pollHiDreamJob(endpointId: string, apiKey: string, jobId: string) {
+  const response = await fetch(`https://api.runpod.ai/v2/${endpointId}/status/${jobId}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  const status = (await response.json()) as RunPodResponse<HiDreamOutput>;
+
+  if (status.status === "IN_PROGRESS") {
+    const progress = parseProgress(status.output);
+    return { status, progress };
+  }
+
+  return { status, progress: undefined };
+}
+```
 
 ## Common Errors
 
