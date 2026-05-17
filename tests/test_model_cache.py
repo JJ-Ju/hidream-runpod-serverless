@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from hidream_o1.model_cache import normalize_model_id, resolve_model_path
@@ -76,6 +78,22 @@ def test_resolve_model_path_error_lists_visible_cache_entries(tmp_path):
     (cache_root / "models--Other--Model").mkdir(parents=True)
 
     with pytest.raises(RuntimeError, match="models--Other--Model"):
+        resolve_model_path("HiDream-ai/HiDream-O1-Image", cache_root, None)
+
+
+def test_resolve_model_path_skips_unreadable_cache_roots(monkeypatch, tmp_path):
+    cache_root = tmp_path / "hub"
+
+    original_is_dir = Path.is_dir
+
+    def fake_is_dir(path):
+        if str(path) == "/root/.cache/huggingface/hub":
+            raise PermissionError("permission denied")
+        return original_is_dir(path)
+
+    monkeypatch.setattr(Path, "is_dir", fake_is_dir)
+
+    with pytest.raises(RuntimeError, match="HIDREAM_MODEL_PATH"):
         resolve_model_path("HiDream-ai/HiDream-O1-Image", cache_root, None)
 
 

@@ -99,7 +99,7 @@ def resolve_snapshot_from_root(model_id: str, cache_root: str | Path) -> Path | 
     model_roots = []
     if root.name == cache_name:
         model_roots.append(root)
-    if root.is_dir():
+    if _is_dir(root):
         exact = root / cache_name
         model_roots.append(exact)
         lower_cache_name = cache_name.lower()
@@ -121,14 +121,17 @@ def _snapshot_from_model_root(model_root: Path) -> Path | None:
     refs_main = model_root / "refs" / "main"
     snapshots_dir = model_root / "snapshots"
 
-    if refs_main.is_file():
+    if _is_file(refs_main):
         snapshot_hash = refs_main.read_text(encoding="utf-8").strip()
         candidate = snapshots_dir / snapshot_hash
-        if candidate.is_dir():
+        if _is_dir(candidate):
             return candidate
 
-    if snapshots_dir.is_dir():
-        snapshots = sorted(path for path in snapshots_dir.iterdir() if path.is_dir())
+    if _is_dir(snapshots_dir):
+        try:
+            snapshots = sorted(path for path in snapshots_dir.iterdir() if _is_dir(path))
+        except OSError:
+            snapshots = []
         if snapshots:
             return snapshots[0]
 
@@ -136,7 +139,7 @@ def _snapshot_from_model_root(model_root: Path) -> Path | None:
 
 
 def _looks_like_model_dir(path: Path) -> bool:
-    if not path.is_dir():
+    if not _is_dir(path):
         return False
     markers = {
         "config.json",
@@ -166,11 +169,35 @@ def _dedupe_paths(paths: list[Path]) -> list[Path]:
 
 
 def _visible_cache_entries(cache_root: Path, limit: int = 8) -> str:
-    if not cache_root.exists():
+    if not _exists(cache_root):
         return "<cache root does not exist>"
-    if not cache_root.is_dir():
+    if not _is_dir(cache_root):
         return "<cache root is not a directory>"
-    entries = sorted(path.name for path in cache_root.iterdir())[:limit]
+    try:
+        entries = sorted(path.name for path in cache_root.iterdir())[:limit]
+    except OSError:
+        return "<cache root is not readable>"
     if not entries:
         return "<empty>"
     return ", ".join(entries)
+
+
+def _exists(path: Path) -> bool:
+    try:
+        return path.exists()
+    except OSError:
+        return False
+
+
+def _is_dir(path: Path) -> bool:
+    try:
+        return path.is_dir()
+    except OSError:
+        return False
+
+
+def _is_file(path: Path) -> bool:
+    try:
+        return path.is_file()
+    except OSError:
+        return False
