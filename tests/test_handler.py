@@ -2,7 +2,8 @@ import handler
 
 
 class FakeService:
-    def handle_job(self, job):
+    def handle_job(self, job, progress_callback=None):
+        assert progress_callback is not None
         return {"image_url": "https://cdn.example.com/out.png", "job_id": job["id"]}
 
 

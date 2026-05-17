@@ -338,7 +338,11 @@ The layout box order follows upstream HiDream: `[x1, x2, y1, y2]`.
 For GUI app integration, use [`CLIENT_API.md`](CLIENT_API.md). It includes the
 RunPod API envelope, sync and async request patterns, TypeScript request and
 response types, direct image payload conversion helpers, response rendering, and
-common error handling.
+common error handling. The worker emits RunPod progress updates during request
+validation, input preparation, model loading, denoising, output encoding, and
+upload/response preparation. During denoising, progress includes step count,
+percentage, elapsed time, and an approximate generation ETA for client-side
+progress bars.
 
 ## Manual GPU Smoke Test
 

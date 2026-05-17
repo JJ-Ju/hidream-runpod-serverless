@@ -7,6 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 from hidream_o1.image_inputs import prepare_reference_images
+from hidream_o1.progress import ProgressCallback, ProgressReporter
 from hidream_o1.schemas import GenerationRequest, RequestValidationError
 from hidream_o1.storage import S3Storage, build_object_key
 
@@ -45,8 +46,10 @@ class GenerationService:
         self.attention_backend = attention_backend
         self.default_output_delivery = _validate_output_delivery(default_output_delivery)
 
-    def handle_job(self, job: dict[str, Any]) -> dict[str, Any]:
+    def handle_job(self, job: dict[str, Any], progress_callback: ProgressCallback | None = None) -> dict[str, Any]:
+        progress = ProgressReporter(progress_callback)
         try:
+            progress.emit("validating", 2, "Validating request")
             job_id = str(job.get("id") or f"local-{uuid4().hex[:12]}")
             job_input = job.get("input", {})
             request = GenerationRequest.from_input(job_input)
@@ -63,8 +66,11 @@ class GenerationService:
                 }
             job_dir = self.work_dir / job_id
             job_dir.mkdir(parents=True, exist_ok=True)
+            progress.emit("preparing_inputs", 8, "Preparing input images")
             ref_image_paths = prepare_reference_images(request.ref_images, job_dir)
-            image = self.runner.generate(request, ref_image_paths)
+            progress.emit("loading_model", 15, "Loading model and processor")
+            image = self.runner.generate(request, ref_image_paths, progress_callback=progress.generation_step)
+            progress.emit("encoding_output", 92, "Encoding generated image")
             image_bytes = _image_to_bytes(image, request.output_format)
 
             response = {
@@ -80,6 +86,7 @@ class GenerationService:
             }
 
             if wants_url:
+                progress.emit("uploading_output", 96, "Uploading generated image")
                 key = build_object_key(job_id, request.output_format, self.output_prefix)
                 result = self.storage.upload_bytes(
                     key,
@@ -95,15 +102,19 @@ class GenerationService:
                 )
 
             if wants_base64:
+                progress.emit("preparing_response", 98, "Preparing direct image response")
                 response.update(
                     {
                         "image_base64": base64.b64encode(image_bytes).decode("ascii"),
                     }
                 )
+            progress.emit("complete", 100, "Generation complete")
             return response
         except RequestValidationError as exc:
+            progress.emit("failed", 100, str(exc))
             return {"error": str(exc)}
         except (RuntimeError, ValueError) as exc:
+            progress.emit("failed", 100, str(exc))
             return {"error": str(exc)}
 
 

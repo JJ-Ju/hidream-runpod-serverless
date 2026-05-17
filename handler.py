@@ -12,6 +12,7 @@ if SRC.is_dir() and str(SRC) not in sys.path:
 from hidream_o1.runner import HiDreamRunner
 from hidream_o1.service import GenerationService
 from hidream_o1.storage import S3Storage, StorageConfig
+from hidream_o1.progress import runpod_progress_callback
 
 
 _SERVICE: GenerationService | None = None
@@ -36,7 +37,7 @@ def get_service() -> GenerationService:
 
 
 def handler(job):
-    return get_service().handle_job(job)
+    return get_service().handle_job(job, progress_callback=runpod_progress_callback(job))
 
 
 if __name__ == "__main__":

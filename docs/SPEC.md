@@ -63,6 +63,8 @@ Response returns:
 - Docs include a client API guide with RunPod request envelopes, sync/async
   endpoint usage, TypeScript request/response types, direct image helpers, GUI
   state guidance, and common worker errors.
+- Worker emits RunPod progress updates with lifecycle stages, percentage, and
+  generation-step ETA for async GUI polling.
 - The worker resolves a local cached Hugging Face snapshot from RunPod cache
   conventions unless `HIDREAM_MODEL_PATH` is set.
 - The worker supports all upstream O1 modes through a single RunPod endpoint.
